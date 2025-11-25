@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Easy Log v6.5</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React Engines -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { overscroll-behavior-y: contain; -webkit-tap-highlight-color: transparent; }
+        button { touch-action: manipulation; }
+        /* Loading Screen Styles */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #f3f4f6; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 9999;
+            font-family: sans-serif;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #e5e7eb;
+            border-top: 5px solid #3b82f6; border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Visual focus for the Adjustable Input */
+        .adjustable-input:focus {
+            outline: 4px solid #3b82f6;
+            outline-offset: 2px;
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans pb-20">
+    
+    <div id="loading-screen" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="spinner" aria-hidden="true"></div>
+        <h1 class="text-xl font-bold text-gray-700">Loading Easy Log...</h1>
+        <p class="text-gray-500 mt-2">Checking History & Schedule</p>
+    </div>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- Icon Set ---
+        const Icons = {
+            Activity: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+            AlertTriangle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>,
+            ArrowRight: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
+            Check: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>,
+            CheckCircle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            ChevronDown: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6 9 6 6 6-6"/></svg>,
+            Circle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/></svg>,
+            Clipboard: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>,
+            Clock: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Download: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+            Dumbbell: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>,
+            Edit2: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
+            FileText: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>,
+            Home: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+            Hourglass: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>,
+            List: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>,
+            Plus: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>,
+            RefreshCw: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>,
+            Save: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            Settings: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            SkipForward: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>,
+            Trash2: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+            Upload: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+            X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        };
+
+        // --- Default Database ---
+        const DEFAULT_DB = {
+            'Upper Body': ['Bench Press', 'Overhead Press', 'Pull Ups', 'Dumbbell Rows', 'Bicep Curls', 'Tricep Dips', 'Lat Pulldown', 'Chest Fly', 'Face Pulls', 'Push Ups'],
+            'Lower Body': ['Squats', 'Deadlifts', 'Lunges', 'Leg Press', 'Romanian Deadlifts', 'Calf Raises', 'Leg Extensions', 'Hamstring Curls', 'Goblet Squats'],
+            'Core': ['Plank', 'Crunches', 'Leg Raises', 'Russian Twists', 'Ab Wheel', 'Bicycle Crunches', 'Hanging Leg Raises', 'Side Plank']
+        };
+
+        // --- Utility Functions ---
+        const getRoutineForDay = (date) => {
+            const day = date.getDay(); 
+            if (day === 1 || day === 4) return 'Lower Body';
+            if (day === 2 || day === 5) return 'Upper Body';
+            return 'Core';
+        };
+
+        const formatDate = (date) => {
+            return new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(date);
+        };
+
+        const getGreeting = () => {
+            const hour = new Date().getHours();
+            if (hour < 12) return "Good Morning";
+            if (hour < 17) return "Good Afternoon";
+            return "Good Evening";
+        };
+
+        const triggerHaptic = () => {
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(50);
+            }
+        };
+
+        const calculateTotalActiveDays = (history) => {
+            if (!history || history.length === 0) return 0;
+            const dates = [...new Set(history.map(h => new Date(h.date).toDateString()))];
+            return dates.length;
+        };
+
+        // --- ADJUSTABLE INPUT COMPONENT (THE MAGIC) ---
+        function AdjustableInput({ id, label, value, onChange, step, unit }) {
+            const [isManual, setIsManual] = useState(false);
+            const inputRef = useRef(null);
+            const spinRef = useRef(null);
+
+            // Parse current value or default to 0
+            const currentVal = value === '' ? 0 : parseFloat(value);
+
+            const adjust = (direction) => {
+                triggerHaptic();
+                const cleanStep = step < 1 ? 10 : 1; // Handle float math (0.1 * 10 = 1)
+                const cleanVal = Math.round(currentVal * cleanStep);
+                const cleanAdd = Math.round(step * cleanStep);
+                
+                let newVal;
+                if (direction === 'up') newVal = (cleanVal + cleanAdd) / cleanStep;
+                else newVal = (cleanVal - cleanAdd) / cleanStep;
+                
+                if (newVal < 0) newVal = 0;
+                onChange(newVal.toString());
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'ArrowUp') { e.preventDefault(); adjust('up'); }
+                if (e.key === 'ArrowDown') { e.preventDefault(); adjust('down'); }
+            };
+
+            // Focus management for switching modes
+            useEffect(() => {
+                if (isManual && inputRef.current) inputRef.current.focus();
+                if (!isManual && spinRef.current) spinRef.current.focus();
+            }, [isManual]);
+
+            if (isManual) {
+                return (
+                    <div className="mb-4">
+                         <label htmlFor={id} className="block text-sm font-bold text-gray-800 mb-1 capitalize">{label}</label>
+                        <div className="flex gap-2">
+                            <input 
+                                ref={inputRef}
+                                id={id}
+                                type="text" 
+                                inputMode="decimal"
+                                value={value}
+                                onChange={(e) => onChange(e.target.value)}
+                                onBlur={() => setIsManual(false)} // Auto-close on leave
+                                className="w-full p-4 text-xl border-2 border-blue-500 rounded bg-white"
+                                placeholder="Type value..."
+                            />
+                             <button onClick={() => setIsManual(false)} className="bg-gray-200 p-3 rounded font-bold text-sm">Done</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="mb-4">
+                    <label id={`${id}-label`} className="block text-sm font-bold text-gray-800 mb-1 capitalize">{label}</label>
+                    <div 
+                        ref={spinRef}
+                        role="spinbutton"
+                        tabIndex="0"
+                        aria-labelledby={`${id}-label`}
+                        aria-valuenow={currentVal}
+                        aria-valuetext={`${currentVal} ${unit}`}
+                        onKeyDown={handleKeyDown}
+                        onClick={() => setIsManual(true)} // Double tap (or click) to edit
+                        className="adjustable-input w-full p-4 text-xl border border-gray-400 rounded bg-white flex justify-between items-center cursor-pointer active:bg-gray-100"
+                    >
+                        <span className="font-bold text-2xl">{value || "0"}</span>
+                        <span className="text-gray-500 text-sm font-medium uppercase">Swipe Up/Down</span>
+                    </div>
+                </div>
+            );
+        }
+
+
+        // --- SPLASH SCREEN COMPONENT ---
+        function SplashScreen({ onDismiss, routine, history, currentSession, onBonus }) {
+            const [greeting] = useState(getGreeting());
+            const [activeDays] = useState(calculateTotalActiveDays(history));
+            
+            const { progress, allDone } = useMemo(() => {
+                const todayStr = new Date().toDateString();
+                const todayEntries = history.filter(h => new Date(h.date).toDateString() === todayStr);
+                
+                const isWeightsSaved = todayEntries.some(h => !h.isCardio && h.routine === routine);
+                const isWeightsInProgress = !isWeightsSaved && (currentSession && currentSession.length > 0);
+
+                const p = {
+                    hiit: todayEntries.some(h => h.isCardio && h.activity === 'HIIT Run') ? 'done' : 'todo',
+                    cycle: todayEntries.some(h => h.isCardio && h.activity === 'Indoor Cycle') ? 'done' : 'todo',
+                    endurance: todayEntries.some(h => h.isCardio && h.activity === 'Endurance Run') ? 'done' : 'todo',
+                    incline: todayEntries.some(h => h.isCardio && h.activity === 'Incline Walk') ? 'done' : 'todo',
+                    weights: isWeightsSaved ? 'done' : (isWeightsInProgress ? 'progress' : 'todo')
+                };
+
+                const allDone = p.hiit === 'done' && p.cycle === 'done' && p.endurance === 'done' && p.incline === 'done' && p.weights === 'done';
+                return { progress: p, allDone };
+            }, [history, routine, currentSession]);
+
+            const StatusIcon = ({ status }) => {
+                if (status === 'done') return <span aria-label="Completed"><Icons.CheckCircle className="text-green-500" /></span>;
+                if (status === 'progress') return <span aria-label="In Progress"><Icons.Hourglass className="text-orange-400 animate-pulse" /></span>;
+                return <span aria-label="Not started"><Icons.Circle className="text-gray-500" /></span>;
+            };
+
+            return (
+                <div className="fixed inset-0 bg-slate-900 text-white z-50 flex flex-col p-6 overflow-y-auto">
+                    <div className="flex-1 flex flex-col justify-center space-y-8">
+                        <div>
+                            <h1 className="text-4xl font-bold mb-2">{greeting}</h1>
+                            <p className="text-slate-400 text-xl">{formatDate(new Date())}</p>
+                            <p className="text-blue-400 text-2xl font-extrabold mt-1 uppercase tracking-wide">{routine} Focus</p>
+                            <div className="mt-4 inline-block bg-slate-800 px-3 py-1 rounded-full text-sm font-bold text-yellow-400 border border-slate-700">
+                                🔥 {activeDays} Total Active Days
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                                <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">Morning Routine</h2>
+                                <div className="space-y-3 text-lg font-medium">
+                                    <div className="flex items-center justify-between"><span>HIIT Run</span><StatusIcon status={progress.hiit} /></div>
+                                    <div className="flex items-center justify-between"><span>Indoor Cycle</span><StatusIcon status={progress.cycle} /></div>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                                <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">Afternoon Routine</h2>
+                                <div className="space-y-3 text-lg font-medium">
+                                    <div className="flex items-center justify-between text-blue-300"><span>{routine} Focus</span><StatusIcon status={progress.weights} /></div>
+                                    <div className="flex items-center justify-between"><span>Endurance Run</span><StatusIcon status={progress.endurance} /></div>
+                                    <div className="flex items-center justify-between"><span>Incline Walk</span><StatusIcon status={progress.incline} /></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => { triggerHaptic(); allDone ? onBonus() : onDismiss(); }}
+                        className={`w-full text-white font-bold text-xl py-6 rounded-xl shadow-lg active:scale-95 transition-transform mt-6 ${allDone ? 'bg-green-600 hover:bg-green-500' : 'bg-blue-600 hover:bg-blue-500'}`}
+                    >
+                        {allDone ? "I'm feeling extra good today! 🎉" : "Let's get this day going"}
+                    </button>
+                </div>
+            );
+        }
+
+        // --- BONUS VIEW ---
+        function BonusView({ onBack, onSaveBonus, availableExercises }) {
+            const [subMode, setSubMode] = useState('menu'); 
+            const [note, setNote] = useState('');
+            const [sessionHistory, setSessionHistory] = useState([]);
+            const [strengthForm, setStrengthForm] = useState({ name: '', sets: '', reps: '', weight: '' });
+            const [cardioActivity, setCardioActivity] = useState(''); 
+
+            const handleBonusCardioSave = (activity, metrics) => {
+                onSaveBonus({ type: 'Cardio', name: activity, ...metrics });
+                setSessionHistory(prev => [...prev, { type: 'Cardio', name: activity }]);
+                setSubMode('menu');
+            };
+
+            const handleStrengthSave = (e) => {
+                e.preventDefault();
+                if(!strengthForm.name) return;
+                onSaveBonus({ type: 'Strength', ...strengthForm });
+                setSessionHistory(prev => [...prev, { type: 'Strength', name: strengthForm.name }]);
+                setStrengthForm({ name: '', sets: '', reps: '', weight: '' });
+                setSubMode('menu');
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow">
+                        <button onClick={onBack} className="flex items-center gap-2 text-blue-700 font-bold"><Icons.ArrowRight className="rotate-180" /> Main Menu</button>
+                        <span className="font-extrabold text-xl text-green-700">BONUS ZONE</span>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <label className="block text-sm font-bold text-yellow-900 mb-1">Bonus Session Note</label>
+                        <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Log how you feel..." className="w-full p-3 border border-yellow-300 rounded bg-white" rows="2" />
+                    </div>
+                    {subMode === 'menu' && (
+                        <div className="space-y-4">
+                            <div className="bg-white p-4 rounded-lg shadow"><h3 className="font-bold text-lg text-gray-800 mb-2 border-b pb-2">Today's Extra Work</h3>{sessionHistory.length === 0 ? <p className="text-gray-500 italic">Nothing added yet.</p> : (<ul className="list-disc pl-5 space-y-1">{sessionHistory.map((item, i) => (<li key={i} className="text-gray-800"><span className="font-bold">{item.type}:</span> {item.name}</li>))}</ul>)}</div>
+                            <button onClick={() => { triggerHaptic(); setSubMode('cardio'); }} className="w-full p-6 bg-indigo-600 text-white rounded-xl shadow-lg font-bold text-xl flex items-center justify-center gap-3"><Icons.Activity size={28} /> Add Bonus Cardio</button>
+                            <button onClick={() => { triggerHaptic(); setSubMode('strength'); }} className="w-full p-6 bg-blue-700 text-white rounded-xl shadow-lg font-bold text-xl flex items-center justify-center gap-3"><Icons.Dumbbell size={28} /> Add Bonus Strength</button>
+                        </div>
+                    )}
+                    {subMode === 'cardio' && <div className="bg-white p-4 rounded-lg shadow-xl border-t-8 border-indigo-500"><h2 className="text-xl font-bold mb-4">Add Bonus Cardio</h2><div className="space-y-4">{['HIIT Run', 'Indoor Cycle', 'Endurance Run', 'Incline Walk', 'Treadmill Walk', 'Elliptical'].map(type => (<button key={type} onClick={() => { triggerHaptic(); setCardioActivity(type); }} className="w-full p-4 text-left border rounded-lg font-bold hover:bg-indigo-50 flex justify-between">{type} <Icons.ArrowRight size={20} /></button>))}<button onClick={() => setSubMode('menu')} className="w-full p-4 text-gray-600 font-bold text-center border mt-2 rounded-lg">Cancel</button></div></div>}
+                    {subMode === 'cardio' && cardioActivity && <div className="fixed inset-0 bg-gray-100 z-50 p-4 overflow-y-auto"><CardioForm history={[]} onSave={(activity, metrics) => { handleBonusCardioSave(activity, metrics); setCardioActivity(''); }} onCancel={() => { setCardioActivity(''); setSubMode('menu'); }} /></div>}
+                    {subMode === 'strength' && (
+                        <form onSubmit={handleStrengthSave} className="bg-white p-6 rounded-lg shadow-xl border-t-8 border-blue-600">
+                            <h2 className="text-xl font-bold mb-4 text-blue-900">Add Bonus Strength</h2>
+                            <div className="space-y-4">
+                                <div><label className="block font-bold text-sm mb-1">Exercise</label><select className="w-full p-3 border rounded text-lg font-bold" value={strengthForm.name} onChange={e => setStrengthForm({...strengthForm, name: e.target.value})}><option value="">Select Exercise...</option>{availableExercises.map(ex => <option key={ex} value={ex}>{ex}</option>)}</select></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><AdjustableInput id="b-sets" label="Sets" value={strengthForm.sets} onChange={v => setStrengthForm({...strengthForm, sets:v})} step={1} unit="" /></div>
+                                    <div><AdjustableInput id="b-reps" label="Reps" value={strengthForm.reps} onChange={v => setStrengthForm({...strengthForm, reps:v})} step={1} unit="" /></div>
+                                    <div className="col-span-2"><AdjustableInput id="b-weight" label="Weight" value={strengthForm.weight} onChange={v => setStrengthForm({...strengthForm, weight:v})} step={1} unit="lbs" /></div>
+                                </div>
+                                <div className="flex gap-3 pt-4"><button type="button" onClick={() => setSubMode('menu')} className="flex-1 py-3 bg-gray-200 font-bold rounded-lg">Cancel</button><button type="submit" className="flex-[2] py-3 bg-blue-600 text-white font-bold rounded-lg shadow">Save Bonus</button></div>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            );
+        }
+
+        // --- Exercise Item (Standard) ---
+        function ExerciseItem({ exercise, isEditing, isLast, onEdit, onDelete, onUpdate, onNext, onSkip, previousBest }) {
+            const firstInputRef = useRef(null);
+
+            useEffect(() => {
+                if (isEditing && firstInputRef.current) setTimeout(() => firstInputRef.current.focus(), 50);
+            }, [isEditing]);
+
+            if (isEditing) {
+                return (
+                    <div className="bg-white p-4 rounded-lg shadow-xl border-4 border-blue-600 mb-6 relative" role="region" aria-label={`Editing ${exercise.name}`}>
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <div>
+                                <h3 className="text-2xl font-bold text-blue-900">{exercise.name}</h3>
+                                {previousBest && <p className="text-sm text-gray-600 font-medium mt-1">Goal: {previousBest}lb</p>}
+                            </div>
+                            <button onClick={() => { triggerHaptic(); onDelete(exercise.id, exercise.name); }} className="text-red-600 p-4 hover:bg-red-50 rounded-lg" aria-label={`Delete ${exercise.name}`}>
+                                <Icons.Trash2 size={28} />
+                            </button>
+                        </div>
+                        
+                        {!isLast && (
+                            <button onClick={() => { triggerHaptic(); onSkip(exercise); }} className="w-full mb-6 py-4 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg font-bold flex items-center justify-center gap-2 active:bg-gray-200">
+                                <span className="uppercase tracking-wide text-sm">Skip for now</span> <Icons.SkipForward size={20} />
+                            </button>
+                        )}
+
+                        {/* REPLACED WITH ADJUSTABLE INPUTS */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div ref={firstInputRef} tabIndex="-1">
+                                <AdjustableInput id={`${exercise.id}-sets`} label={`${exercise.name} Sets`} value={exercise.sets} onChange={v => onUpdate(exercise.id, 'sets', v)} step={1} unit="" />
+                            </div>
+                            <div>
+                                <AdjustableInput id={`${exercise.id}-reps`} label="Reps" value={exercise.reps} onChange={v => onUpdate(exercise.id, 'reps', v)} step={1} unit="" />
+                            </div>
+                            <div className="col-span-2">
+                                <AdjustableInput id={`${exercise.id}-weight`} label="Weight" value={exercise.weight} onChange={v => onUpdate(exercise.id, 'weight', v)} step={1} unit="lbs" />
+                            </div>
+                             <div className="col-span-2">
+                                <AdjustableInput id={`${exercise.id}-time`} label="Time (Opt)" value={exercise.time} onChange={v => onUpdate(exercise.id, 'time', v)} step={1} unit="min" />
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
+                            <label htmlFor={`notes-${exercise.id}`} className="block text-sm font-bold text-gray-800 mb-1">Notes</label>
+                            <textarea id={`notes-${exercise.id}`} aria-label="Notes" value={exercise.notes} onChange={(e) => onUpdate(exercise.id, 'notes', e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded focus:border-blue-600 focus:ring-4 focus:ring-blue-600/50" placeholder="Notes..." rows="2" />
+                        </div>
+                        <div className="space-y-3">
+                            <div className="flex gap-2">
+                                <button onClick={() => { triggerHaptic(); onNext(exercise); }} className={`w-full text-white py-5 rounded-lg font-bold text-xl shadow flex items-center justify-center gap-3 ${isLast ? 'bg-green-700' : 'bg-blue-700'}`}>
+                                    {isLast ? <><Icons.Check size={28} /> Finish</> : <><Icons.ArrowRight size={28} /> Next</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            const isSaved = exercise.sets || exercise.weight;
+            const statusColor = isSaved ? "border-l-8 border-green-500 bg-white" : "border border-gray-300 bg-gray-50 opacity-70";
+            const statusText = isSaved ? `Saved ✅` : "Not Started";
+            const summaryText = [exercise.sets && `${exercise.sets} sets`, exercise.reps && `${exercise.reps} reps`, exercise.weight && `${exercise.weight}lb`].filter(Boolean).join(', ');
+
+            return (
+                <li className={`p-4 rounded-lg shadow-sm mb-3 flex justify-between items-center list-none ${statusColor}`}>
+                    <div className="flex-grow pr-4">
+                        <h3 className="text-lg font-bold text-gray-800">{exercise.name}</h3>
+                        <div className="flex flex-col">
+                            <span className="text-gray-700 font-medium">{summaryText}</span>
+                            <span className={`text-xs font-bold uppercase tracking-wide mt-1 ${isSaved ? 'text-green-700' : 'text-gray-500'}`}>Status: {statusText}</span>
+                        </div>
+                    </div>
+                    <button onClick={() => {triggerHaptic(); onEdit(exercise.id)}} className="p-4 bg-gray-100 text-blue-800 rounded-lg border border-gray-300 hover:bg-blue-100 min-h-[44px] min-w-[44px]" aria-label={`Edit ${exercise.name}`}>
+                        <Icons.Edit2 size={20} />
+                    </button>
+                </li>
+            );
+        }
+
+        // --- Cardio Form (Updated with Adjustable) ---
+        function CardioForm({ history, onSave, onCancel }) {
+            const [activity, setActivity] = useState('');
+            const [formData, setFormData] = useState({ duration: '', speedEasy: '', speedMod: '', speedHard: '', speedAllOut: '', intensity: '', avgSpeed: '', minIncline: '', maxIncline: '', notes: '' });
+            const durationRef = useRef(null);
+
+            useEffect(() => {
+                if (activity) {
+                    const lastEntry = history.slice().reverse().find(h => h.isCardio && h.activity === activity);
+                    if (lastEntry && lastEntry.metrics) {
+                        setFormData(prev => ({ ...prev, ...lastEntry.metrics, notes: '' }));
+                    } else {
+                        setFormData({ duration: '', speedEasy: '', speedMod: '', speedHard: '', speedAllOut: '', intensity: '', avgSpeed: '', minIncline: '', maxIncline: '', notes: '' });
+                    }
+                    setTimeout(() => durationRef.current?.focus(), 100);
+                }
+            }, [activity, history]);
+
+            const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+            const handleSubmit = (e) => { e.preventDefault(); if (!activity) return; triggerHaptic(); onSave(activity, formData); };
+
+            if (!activity) {
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-lg border border-blue-200">
+                        <h2 className="text-2xl font-bold text-blue-900 mb-6" tabIndex="-1">Select Cardio Activity</h2>
+                        <div className="grid grid-cols-1 gap-4">
+                            {['HIIT Run', 'Indoor Cycle', 'Endurance Run', 'Incline Walk'].map(type => (
+                                <button key={type} onClick={() => { triggerHaptic(); setActivity(type); }} className="p-5 bg-blue-50 text-blue-900 font-bold text-xl rounded-lg border-2 border-blue-100 hover:bg-blue-100 hover:border-blue-300 text-left flex justify-between items-center">
+                                    {type} <Icons.ArrowRight size={24} />
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={() => { triggerHaptic(); onCancel(); }} className="w-full mt-6 py-4 text-gray-600 font-bold text-lg flex items-center justify-center gap-2"><Icons.X size={24} /> Cancel</button>
+                    </div>
+                );
+            }
+            return (
+                <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-xl border-t-8 border-indigo-600">
+                    <h2 className="text-2xl font-bold text-indigo-900 mb-6">{activity} Log</h2>
+                    <div className="space-y-6">
+                        <div ref={durationRef} tabIndex="-1"><AdjustableInput id="c-duration" label="Duration" value={formData.duration} onChange={v => handleChange('duration', v)} step={1} unit="min" /></div>
+                        
+                        {activity === 'HIIT Run' && <div className="grid grid-cols-2 gap-4">
+                            <div><AdjustableInput id="c-easy" label="Easy Spd" value={formData.speedEasy} onChange={v => handleChange('speedEasy', v)} step={0.1} unit="mph" /></div>
+                            <div><AdjustableInput id="c-mod" label="Mod Spd" value={formData.speedMod} onChange={v => handleChange('speedMod', v)} step={0.1} unit="mph" /></div>
+                            <div><AdjustableInput id="c-hard" label="Hard Spd" value={formData.speedHard} onChange={v => handleChange('speedHard', v)} step={0.1} unit="mph" /></div>
+                            <div><AdjustableInput id="c-max" label="Max Spd" value={formData.speedAllOut} onChange={v => handleChange('speedAllOut', v)} step={0.1} unit="mph" /></div>
+                        </div>}
+                        
+                        {activity === 'Indoor Cycle' && <div><label className="block text-sm font-bold text-gray-800 mb-3" id="intensity-label">Intensity</label><div className="grid grid-cols-2 gap-3" role="radiogroup" aria-labelledby="intensity-label">{['Easy', 'Moderate', 'Hard', 'All Out'].map(level => (<label key={level} className={`p-4 border-2 rounded-lg flex items-center justify-center font-bold cursor-pointer ${formData.intensity === level ? 'bg-indigo-100 border-indigo-600 text-indigo-900' : 'border-gray-300 text-gray-700'}`}><input type="radio" name="intensity" value={level} checked={formData.intensity === level} onChange={e => handleChange('intensity', e.target.value)} className="sr-only" />{level}</label>))}</div></div>}
+                        
+                        {activity === 'Endurance Run' && <div><AdjustableInput id="c-avg" label="Avg Speed" value={formData.avgSpeed} onChange={v => handleChange('avgSpeed', v)} step={0.1} unit="mph" /></div>}
+                        
+                        {activity === 'Incline Walk' && <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2"><AdjustableInput id="c-w-avg" label="Avg Speed" value={formData.avgSpeed} onChange={v => handleChange('avgSpeed', v)} step={0.1} unit="mph" /></div>
+                            <div><AdjustableInput id="c-min" label="Min Incline" value={formData.minIncline} onChange={v => handleChange('minIncline', v)} step={1} unit="%" /></div>
+                            <div><AdjustableInput id="c-max" label="Max Incline" value={formData.maxIncline} onChange={v => handleChange('maxIncline', v)} step={1} unit="%" /></div>
+                        </div>}
+                        
+                        <div><label htmlFor="cardio-notes" className="block text-sm font-bold text-gray-800 mb-1">Notes</label><textarea id="cardio-notes" aria-label="Cardio notes" value={formData.notes} onChange={e => handleChange('notes', e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded bg-white" placeholder="How did it feel?" rows="3" /></div>
+                        <div className="flex gap-3 pt-4"><button type="button" onClick={() => { triggerHaptic(); onCancel(); }} className="flex-1 py-4 bg-gray-200 text-gray-800 rounded-lg font-bold text-lg flex items-center justify-center gap-2"><Icons.X size={24} /> Cancel</button><button type="submit" className="flex-[2] py-4 bg-indigo-700 text-white rounded-lg font-bold text-xl shadow flex items-center justify-center gap-2"><Icons.Check size={24} /> Save</button></div>
+                    </div>
+                </form>
+            );
+        }
+
+        // --- Reports, AddForm, and Main App ---
+        function ReportsView({ history, onBack }) {
+            const [filter, setFilter] = useState('week');
+            const [reportText, setReportText] = useState('');
+            const [filteredEntries, setFilteredEntries] = useState([]);
+            useEffect(() => {
+                const now = new Date();
+                const filtered = history.filter(entry => {
+                    const d = new Date(entry.date);
+                    if (filter === 'day') return d.toDateString() === now.toDateString();
+                    if (filter === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                    if (filter === 'year') return d.getFullYear() === now.getFullYear();
+                    if (filter === 'week') { const oneWeekAgo = new Date(); oneWeekAgo.setDate(now.getDate() - 7); return d >= oneWeekAgo; }
+                    return true;
+                }).slice().reverse();
+                setFilteredEntries(filtered);
+                setReportText(generateReportText(filtered, filter));
+            }, [filter, history]);
+            const handleCopy = () => { triggerHaptic(); const ta = document.createElement("textarea"); ta.value = reportText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert("Report copied!"); };
+            const handleDownload = () => { triggerHaptic(); const blob = new Blob([reportText], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `Report.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); };
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white p-4 rounded-lg shadow"><h2 className="text-xl font-bold mb-4 text-center">Select Report Period</h2><div className="grid grid-cols-5 gap-1">{['day', 'week', 'month', 'year', 'all'].map(f => (<button key={f} onClick={() => { triggerHaptic(); setFilter(f); }} className={`py-3 px-1 rounded text-sm font-bold uppercase ${filter === f ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}>{f}</button>))}</div></div>
+                    <div className="flex gap-3"><button onClick={handleCopy} className="flex-1 py-4 bg-indigo-100 text-indigo-900 border-2 border-indigo-300 rounded-lg font-bold flex items-center justify-center gap-2"><Icons.Clipboard size={24} /> Copy for AI</button><button onClick={handleDownload} className="flex-1 py-4 bg-green-100 text-green-900 border-2 border-green-300 rounded-lg font-bold flex items-center justify-center gap-2"><Icons.FileText size={24} /> Save File</button></div>
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-bold text-gray-700 border-b pb-2">{filter === 'all' ? 'All Time' : `This ${filter.charAt(0).toUpperCase() + filter.slice(1)}`} ({filteredEntries.length} entries)</h3>
+                        {filteredEntries.length === 0 && <p className="text-gray-500 italic">No entries found.</p>}
+                        {filteredEntries.map((entry) => (
+                            <div key={entry.id} className="bg-white p-4 rounded shadow border-l-4 border-gray-400">
+                                <div className="font-bold text-gray-900 flex justify-between"><span>{new Date(entry.date).toLocaleDateString()}</span><span className="text-sm text-gray-500">{new Date(entry.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>
+                                {entry.isCardio ? (<div className="mt-2"><span className="text-indigo-700 font-bold uppercase text-sm tracking-wide">Cardio: {entry.activity}</span><p className="text-gray-800 ml-2">Duration: {entry.metrics.duration}m</p></div>) : (<div className="mt-2"><span className="text-blue-700 font-bold uppercase text-sm tracking-wide">Weights: {entry.routine}</span><ul className="ml-2 mt-1 space-y-1 text-sm text-gray-800">{entry.exercises.map((ex, i) => (<li key={i}><strong>{ex.name}:</strong> {ex.weight}lb ({ex.sets}x{ex.reps})</li>))}</ul></div>)}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function AddExerciseForm({ onAdd, routine, availableExercises }) {
+            const [mode, setMode] = useState('select');
+            const [customInput, setCustomInput] = useState('');
+            const selectRef = useRef(null);
+            const inputRef = useRef(null);
+            const handleSelectChange = (e) => { const val = e.target.value; if (val === 'TYPE_NEW') { setMode('type'); setTimeout(() => inputRef.current?.focus(), 100); } else if (val !== '') { onAdd(val, false); e.target.value = ''; } };
+            const handleCustomSubmit = (e) => { e.preventDefault(); if (customInput.trim()) { onAdd(customInput.trim(), true); setCustomInput(''); setMode('select'); setTimeout(() => selectRef.current?.focus(), 100); } };
+            return (
+                <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200 mt-6">
+                    <label className="block text-sm font-bold text-blue-900 mb-2">{mode === 'select' ? `Add ${routine} Exercise` : `Type New ${routine} Exercise`}</label>
+                    {mode === 'select' ? (<div className="relative"><select ref={selectRef} onChange={handleSelectChange} defaultValue="" className="block w-full p-4 text-lg border border-blue-300 rounded shadow-sm focus:ring-4 focus:ring-blue-600 appearance-none bg-white"><option value="" disabled>Select exercise...</option>{availableExercises.map((ex) => (<option key={ex} value={ex}>{ex}</option>))}<option value="TYPE_NEW" className="font-bold text-blue-800">+ Type New...</option></select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-700"><Icons.ChevronDown size={24} /></div></div>) : (<form onSubmit={handleCustomSubmit} className="flex flex-col gap-3"><input ref={inputRef} type="text" value={customInput} onChange={(e) => setCustomInput(e.target.value)} placeholder={`New ${routine} Exercise Name`} className="w-full p-4 border border-blue-300 rounded shadow-sm text-lg focus:ring-4 focus:ring-blue-600" autoComplete="off" /><div className="flex gap-2"><button type="button" onClick={() => setMode('select')} className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-lg font-bold">Cancel</button><button type="submit" className="flex-1 py-3 bg-blue-700 text-white rounded-lg font-bold">Save</button></div></form>)}
+                </div>
+            );
+        }
+
+        // --- MAIN APP ---
+        function App() {
+            const [isDataLoaded, setIsDataLoaded] = useState(false); 
+            const [showSplash, setShowSplash] = useState(true);
+            const [currentDate, setCurrentDate] = useState(new Date());
+            const [view, setView] = useState('menu'); 
+            const [history, setHistory] = useState([]);
+            const [manualRoutine, setManualRoutine] = useState(null);
+            const [todaysExercises, setTodaysExercises] = useState([]);
+            const [customDb, setCustomDb] = useState({});
+            const [editingId, setEditingId] = useState(null);
+            const [announcement, setAnnouncement] = useState('');
+            const announcementRef = useRef(null);
+            const headerRef = useRef(null);
+
+            // INIT EFFECT
+            useEffect(() => {
+                const savedHistory = localStorage.getItem('workout_history');
+                const savedCurrentSession = localStorage.getItem('current_session');
+                const savedSessionDate = localStorage.getItem('current_session_date');
+                const savedCustomDb = localStorage.getItem('custom_exercise_db');
+                const seenSplash = sessionStorage.getItem('seen_splash_v5');
+
+                if (savedHistory) setHistory(JSON.parse(savedHistory));
+                if (savedCustomDb) setCustomDb(JSON.parse(savedCustomDb));
+                if (savedCurrentSession && savedSessionDate) {
+                    if (savedSessionDate === new Date().toDateString()) {
+                        setTodaysExercises(JSON.parse(savedCurrentSession));
+                    }
+                }
+                if (seenSplash) setShowSplash(false);
+
+                // REMOVE LOADER
+                setTimeout(() => {
+                    const loader = document.getElementById('loading-screen');
+                    if (loader) loader.style.display = 'none';
+                    setIsDataLoaded(true);
+                }, 800);
+            }, []);
+
+            // PERSISTENCE
+            useEffect(() => { if(isDataLoaded) localStorage.setItem('current_session', JSON.stringify(todaysExercises)); }, [todaysExercises, isDataLoaded]);
+            useEffect(() => { if(isDataLoaded) localStorage.setItem('current_session_date', new Date().toDateString()); }, [todaysExercises, isDataLoaded]);
+            useEffect(() => { if(isDataLoaded) localStorage.setItem('workout_history', JSON.stringify(history)); }, [history, isDataLoaded]);
+            useEffect(() => { if(isDataLoaded) localStorage.setItem('custom_exercise_db', JSON.stringify(customDb)); }, [customDb, isDataLoaded]);
+
+            useEffect(() => { if (headerRef.current && !showSplash) setTimeout(() => headerRef.current.focus(), 100); }, [view, showSplash]);
+
+            const activeRoutine = manualRoutine || getRoutineForDay(currentDate);
+            const announce = (message) => { setAnnouncement(message); setTimeout(() => setAnnouncement(''), 6000); };
+
+            const dismissSplash = () => {
+                sessionStorage.setItem('seen_splash_v5', 'true');
+                setShowSplash(false);
+            };
+
+            const switchToBonus = () => {
+                sessionStorage.setItem('seen_splash_v5', 'true');
+                setShowSplash(false);
+                setView('bonus');
+            };
+
+            // Handles adding bonus entries
+            const handleBonusSave = (entry) => {
+                // Create record
+                const record = {
+                    id: Date.now(),
+                    date: new Date().toString(),
+                    isCardio: entry.type === 'Cardio',
+                    routine: 'Bonus Session', // Tag for filtering
+                    isBonus: true, // Explicit tag
+                    activity: entry.type === 'Cardio' ? entry.name : undefined,
+                    metrics: entry.type === 'Cardio' ? { duration: entry.duration, notes: entry.notes, ...entry } : undefined,
+                    exercises: entry.type === 'Strength' ? [{ name: entry.name, weight: entry.weight, sets: entry.sets, reps: entry.reps }] : undefined
+                };
+                setHistory(prev => [...prev, record]);
+                announce(`${entry.name} saved to Bonus Session.`);
+            };
+
+            // Flatten DB for Master List
+            const masterExerciseList = useMemo(() => {
+                const standard = Object.values(DEFAULT_DB).flat();
+                const custom = Object.values(customDb).flat();
+                return [...new Set([...standard, ...custom])].sort();
+            }, [customDb]);
+
+            // Logic for Weights (Queue View)
+            
+            const activeExercise = useMemo(() => {
+                if (todaysExercises.length === 0) return null;
+                if (editingId) return todaysExercises.find(ex => ex.id === editingId);
+                return todaysExercises.find(ex => !ex.sets && !ex.weight);
+            }, [todaysExercises, editingId]);
+
+            const upNextExercises = useMemo(() => {
+                if (!activeExercise) return [];
+                const activeIndex = todaysExercises.findIndex(ex => ex.id === activeExercise.id);
+                // Return everything AFTER active that is NOT saved
+                return todaysExercises.slice(activeIndex + 1).filter(ex => !ex.sets && !ex.weight);
+            }, [todaysExercises, activeExercise]);
+
+            const completedExercises = useMemo(() => {
+                // Return everything that IS saved
+                return todaysExercises.filter(ex => ex.sets || ex.weight);
+            }, [todaysExercises]);
+
+            const handleNextExercise = (currentExercise) => { 
+                triggerHaptic(); 
+                // PR Check (Passive Gamification)
+                if (currentExercise.weight && currentExercise.previousWeight) {
+                    const cleanWeight = parseFloat(currentExercise.weight.replace(/[^0-9.]/g, ''));
+                    const cleanPrev = parseFloat(currentExercise.previousWeight.replace(/[^0-9.]/g, ''));
+                    if (!isNaN(cleanWeight) && !isNaN(cleanPrev) && cleanWeight > cleanPrev) {
+                        announce(`New PR on ${currentExercise.name}!`);
+                    }
+                }
+                
+                setEditingId(null);
+                announce("Saved. Loading next.");
+            };
+
+            const handleSkipExercise = (currentExercise) => { 
+                triggerHaptic(); 
+                const currentIndex = todaysExercises.findIndex(ex => ex.id === currentExercise.id); 
+                const newSession = [...todaysExercises]; 
+                newSession.splice(currentIndex, 1); 
+                newSession.push(currentExercise); 
+                setTodaysExercises(newSession); 
+                
+                setEditingId(null);
+                announce(`Skipped. Now: ${newSession[currentIndex].name}.`); 
+            };
+
+            const handleLoadLastWorkout = () => { triggerHaptic(); const lastWorkout = history.slice().reverse().find(w => !w.isCardio && w.routine === activeRoutine); if (!lastWorkout) { announce("No history."); return; } const newSession = lastWorkout.exercises.map(ex => ({ ...ex, id: Date.now() + Math.random(), previousWeight: ex.weight })); setTodaysExercises(newSession); if(newSession.length) setEditingId(newSession[0].id); announce("Loaded."); };
+            const handleAddExercise = (exerciseName, isNewCustom) => { triggerHaptic(); if(isNewCustom) setCustomDb(prev => { const list = prev[activeRoutine] || []; if (!list.includes(exerciseName)) return { ...prev, [activeRoutine]: [...list, exerciseName] }; return prev; }); const newExercise = { id: Date.now(), name: exerciseName, sets:'', reps:'', weight:'', time:'', notes:'' }; setTodaysExercises([...todaysExercises, newExercise]); setEditingId(newExercise.id); announce("Added."); };
+            const updateExercise = (id, field, value) => { if (field === 'timer_finished') { announce("Rest finished!"); return; } setTodaysExercises(prev => prev.map(ex => ex.id === id ? { ...ex, [field]: value } : ex)); };
+            const removeExercise = (id, name) => { setTodaysExercises(prev => prev.filter(ex => ex.id !== id)); if (editingId === id) setEditingId(null); announce("Removed."); };
+            const finishWorkout = () => { triggerHaptic(); if (!todaysExercises.length) return; setEditingId(null); const record = { id: Date.now(), date: new Date().toString(), routine: activeRoutine, isCardio: false, exercises: todaysExercises }; setHistory([...history, record]); setTodaysExercises([]); localStorage.removeItem('current_session'); setManualRoutine(null); setView('menu'); announce("Saved."); };
+            const handleSaveCardio = (activity, metrics) => { const record = { id: Date.now(), date: new Date().toString(), isCardio: true, activity, metrics }; setHistory([...history, record]); setView('menu'); announce("Saved."); };
+            const backupData = () => { triggerHaptic(); const data = { history, currentSession: todaysExercises, customDb, exportDate: new Date().toString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `backup_v5.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+            const restoreData = (event) => { triggerHaptic(); const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { const data = JSON.parse(e.target.result); if(data.history) setHistory(data.history); if(data.currentSession) setTodaysExercises(data.currentSession); if(data.customDb) setCustomDb(data.customDb); announce("Restored."); }; reader.readAsText(file); };
+
+            const availableExercises = [...(DEFAULT_DB[activeRoutine] || []), ...(customDb[activeRoutine] || [])].sort();
+
+            // RENDER
+            if (!isDataLoaded) return null; 
+
+            if (showSplash) {
+                return <SplashScreen onDismiss={dismissSplash} onBonus={switchToBonus} routine={activeRoutine} history={history} currentSession={todaysExercises} />;
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-100 text-gray-900 font-sans pb-20">
+                    <div role="status" aria-live="polite" className="sr-only" ref={announcementRef}>{announcement}</div>
+                    <header className="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-20">
+                        <div className="max-w-3xl mx-auto flex justify-between items-center">
+                            <div><h1 ref={headerRef} tabIndex="-1" className="text-xl font-extrabold flex items-center gap-2 outline-none focus:ring-2 focus:ring-blue-400 rounded px-1">{view === 'menu' ? 'Easy Log v6.5' : view === 'weights' ? 'Weight Training' : view === 'cardio' ? 'Cardio Log' : view === 'bonus' ? 'Bonus Zone' : view === 'reports' ? 'Reports' : 'Settings'}</h1><p className="text-sm text-slate-300 font-medium mt-1">{formatDate(currentDate)}</p></div>
+                            <div className="flex gap-2">{view !== 'menu' && <button onClick={() => {triggerHaptic(); setView('menu');}} className="p-3 bg-slate-800 rounded hover:bg-slate-700"><Icons.Home size={24} /></button>}<button onClick={() => {triggerHaptic(); setView(view === 'settings' ? 'menu' : 'settings');}} className="p-3 bg-slate-800 rounded hover:bg-slate-700"><Icons.Settings size={24} /></button></div>
+                        </div>
+                    </header>
+                    <main className="max-w-3xl mx-auto p-4">
+                        {view === 'menu' && (
+                            <div className="space-y-6 mt-4">
+                                {currentDate.getDay() === 5 && <div className="bg-yellow-100 border-l-8 border-yellow-500 text-yellow-900 p-4 rounded-lg flex items-center gap-3" role="alert"><Icons.AlertTriangle size={28} className="flex-shrink-0" /><span className="font-bold text-lg">It's Friday. Don't forget to backup!</span></div>}
+                                <button onClick={() => {triggerHaptic(); setView('weights');}} className="w-full p-8 bg-blue-700 text-white rounded-xl shadow-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Dumbbell size={40} /><span className="text-3xl font-extrabold">Weight Training</span></div><p className="text-blue-200 text-lg font-medium">{getRoutineForDay(currentDate)} Routine</p></button>
+                                <button onClick={() => {triggerHaptic(); setView('cardio');}} className="w-full p-8 bg-indigo-700 text-white rounded-xl shadow-lg hover:bg-indigo-800 focus:ring-4 focus:ring-indigo-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Activity size={40} /><span className="text-3xl font-extrabold">Cardio Log</span></div><p className="text-indigo-200 text-lg font-medium">Log Run, Cycle, or Walk</p></button>
+                                <button onClick={() => {triggerHaptic(); setView('reports');}} className="w-full p-6 bg-white text-slate-800 rounded-xl shadow border border-gray-200 hover:bg-gray-50 text-left flex items-center gap-4"><Icons.List size={32} className="text-slate-500" /><span className="text-xl font-bold">Reports & Export</span></button>
+                            </div>
+                        )}
+                        {view === 'bonus' && <BonusView onBack={() => {triggerHaptic(); setView('menu');}} onSaveBonus={handleBonusSave} availableExercises={masterExerciseList} />}
+                        {view === 'cardio' && <CardioForm history={history} onSave={handleSaveCardio} onCancel={() => setView('menu')} />}
+                        {view === 'weights' && (
+                            <div className="space-y-6">
+                                <section className="bg-white p-6 rounded-lg shadow-sm border-l-8 border-blue-600"><label htmlFor="routine-select" className="block text-sm font-bold text-gray-600 mb-1">Current Routine</label><div className="relative"><select id="routine-select" value={activeRoutine} onChange={(e) => setManualRoutine(e.target.value)} className="block w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-2xl font-extrabold py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-blue-500"><option value="Upper Body">Upper Body</option><option value="Lower Body">Lower Body</option><option value="Core">Core</option></select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><Icons.ChevronDown size={24} /></div></div></section>
+                                {todaysExercises.length === 0 && history.some(w => !w.isCardio && w.routine === activeRoutine) && <button onClick={handleLoadLastWorkout} className="w-full bg-blue-50 text-blue-900 border-2 border-blue-200 py-6 px-6 rounded-lg font-bold text-xl shadow flex items-center justify-center gap-3"><Icons.RefreshCw size={28} /> Load Last {activeRoutine}</button>}
+                                
+                                {/* ZONE 1: ACTIVE FOCUS */}
+                                {activeExercise ? (
+                                    <div aria-live="polite">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
+                                            <h2 className="text-sm font-bold text-blue-600 uppercase tracking-wide">Current Focus</h2>
+                                        </div>
+                                        <ExerciseItem 
+                                            key={activeExercise.id} 
+                                            exercise={activeExercise} 
+                                            isEditing={true} 
+                                            isLast={false} 
+                                            onEdit={setEditingId} 
+                                            onDelete={removeExercise} 
+                                            onUpdate={updateExercise} 
+                                            onNext={handleNextExercise} 
+                                            onSkip={handleSkipExercise} 
+                                            previousBest={activeExercise.previousWeight} 
+                                        />
+                                    </div>
+                                ) : (
+                                    todaysExercises.length > 0 && <div className="p-4 bg-green-100 border border-green-300 rounded-lg text-green-800 font-bold text-center">All Exercises Completed!</div>
+                                )}
+
+                                {/* ZONE 2: UP NEXT */}
+                                {upNextExercises.length > 0 && (
+                                    <div>
+                                        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 pl-1">Up Next</h2>
+                                        <ul className="space-y-2 list-none p-0 opacity-60">
+                                            {upNextExercises.map((ex, index) => (
+                                                <li key={ex.id} className="bg-white p-4 rounded-lg border border-gray-200 flex justify-between">
+                                                    <span className="font-bold text-gray-700">{ex.name}</span>
+                                                    <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-600">Waiting</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* ZONE 3: COMPLETED LOG */}
+                                {completedExercises.length > 0 && (
+                                    <div>
+                                        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 pl-1">Completed Log</h2>
+                                        <ul className="space-y-2 list-none p-0">
+                                            {completedExercises.map((ex, index) => (
+                                                <ExerciseItem 
+                                                    key={ex.id} 
+                                                    exercise={ex} 
+                                                    isEditing={false} 
+                                                    isLast={false} 
+                                                    onEdit={setEditingId} 
+                                                    onDelete={removeExercise} 
+                                                    onUpdate={updateExercise} 
+                                                    onNext={handleNextExercise} 
+                                                    onSkip={handleSkipExercise} 
+                                                    previousBest={ex.previousWeight} 
+                                                />
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                <AddExerciseForm onAdd={handleAddExercise} routine={activeRoutine} availableExercises={availableExercises} />
+                                
+                                {todaysExercises.length > 0 && !activeExercise && (
+                                    <button onClick={finishWorkout} className="w-full bg-green-700 text-white text-2xl font-bold py-5 px-6 rounded-lg shadow-lg mt-8 flex items-center justify-center gap-3 mb-10"><Icons.Save size={32} /> Finish Workout</button>
+                                )}
+                            </div>
+                        )}
+                        {view === 'reports' && <ReportsView history={history} onBack={() => setView('menu')} />}
+                        {view === 'settings' && (
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-6"><h2 className="text-2xl font-bold mb-4">Settings</h2><button onClick={backupData} className="w-full flex items-center justify-center gap-3 bg-gray-800 text-white p-5 rounded-lg font-bold text-lg"><Icons.Download size={24} /> Backup Data</button><hr className="border-gray-300" /><div className="relative"><input type="file" accept=".json" onChange={restoreData} className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" id="restore-input" /><label htmlFor="restore-input" className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white p-5 rounded-lg font-bold text-lg cursor-pointer"><Icons.Upload size={24} /> Restore Data</label></div></div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
