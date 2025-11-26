@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Easy Log v7.0</title>
+    <title>Easy Log v9.1</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,7 +16,6 @@
     <style>
         body { overscroll-behavior-y: contain; -webkit-tap-highlight-color: transparent; }
         button { touch-action: manipulation; }
-        /* Loading Screen Styles */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #f3f4f6; display: flex; flex-direction: column;
@@ -44,41 +43,36 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- SOUND ENGINE (Web Audio API) ---
+        // --- OPTIMIZED AUDIO ENGINE ---
+        const audioCtxRef = { current: null };
         const playSound = (type) => {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (!AudioContext) return;
-                const ctx = new AudioContext();
+                if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+                if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+                const ctx = audioCtxRef.current;
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.connect(gain);
                 gain.connect(ctx.destination);
-
                 const now = ctx.currentTime;
-                
                 if (type === 'success') {
-                    // "Ding" - High pitch sine wave fading out
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(880, now); // A5
-                    osc.frequency.exponentialRampToValueAtTime(1760, now + 0.1); // A6
+                    osc.frequency.setValueAtTime(880, now); 
+                    osc.frequency.exponentialRampToValueAtTime(1760, now + 0.1); 
                     gain.gain.setValueAtTime(0.3, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                    osc.start(now);
-                    osc.stop(now + 0.5);
+                    osc.start(now); osc.stop(now + 0.5);
                 } else if (type === 'skip') {
-                    // "Swoosh" - Low pitch noise-like
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(300, now);
                     osc.frequency.linearRampToValueAtTime(50, now + 0.2);
                     gain.gain.setValueAtTime(0.2, now);
                     gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
-                    osc.start(now);
-                    osc.stop(now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
                 }
-            } catch (e) {
-                console.error("Audio error", e);
-            }
+            } catch (e) { console.error("Audio error", e); }
         };
 
         // --- Icon Set ---
@@ -156,7 +150,7 @@
             const currentVal = value === '' ? 0 : parseFloat(value);
 
             const adjust = (direction) => {
-                // Play simplified sound for adjustment
+                triggerHaptic();
                 playSound(direction === 'up' ? 'success' : 'skip'); 
                 
                 const cleanStep = step < 1 ? 10 : 1;
@@ -191,7 +185,6 @@
                                 value={value} onChange={(e) => onChange(e.target.value)}
                                 onBlur={() => setIsManual(false)}
                                 className="w-full p-4 text-xl border-2 border-blue-500 rounded bg-white"
-                                placeholder="Type..."
                             />
                              <button onClick={() => setIsManual(false)} className="bg-gray-200 p-3 rounded font-bold text-sm">Done</button>
                         </div>
@@ -204,7 +197,10 @@
                     <label id={`${id}-label`} className="block text-sm font-bold text-gray-800 mb-1 capitalize">{label}</label>
                     <div 
                         ref={spinRef} role="spinbutton" tabIndex="0"
-                        aria-labelledby={`${id}-label`} aria-valuenow={currentVal} aria-valuetext={`${currentVal} ${unit}`}
+                        aria-labelledby={`${id}-label`} 
+                        aria-valuenow={currentVal} 
+                        aria-valuetext={`${currentVal} ${unit}`}
+                        aria-valuemin="0" aria-valuemax="9999" 
                         onKeyDown={handleKeyDown} onClick={() => setIsManual(true)}
                         className="adjustable-input w-full p-4 text-xl border border-gray-400 rounded bg-white flex justify-between items-center cursor-pointer active:bg-gray-100"
                     >
@@ -319,7 +315,7 @@
                     </div>
                     <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                         <label className="block text-sm font-bold text-yellow-900 mb-1">Bonus Session Note</label>
-                        <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Log how you feel..." className="w-full p-3 border border-yellow-300 rounded bg-white" rows="2" />
+                        <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="" className="w-full p-3 border border-yellow-300 rounded bg-white" rows="2" />
                     </div>
                     {subMode === 'menu' && (
                         <div className="space-y-4">
@@ -355,10 +351,6 @@
             // NEW: Pre-Flight Context Logic
             const preFlightNote = useMemo(() => {
                 if (!isEditing) return null;
-                // We only have 'previousBest' passed down, but to get the NOTE we technically need to peek history
-                // For v7.0 simplicity, we will rely on 'previousBest' for now, but to show the NOTE, we would need to pass it.
-                // To keep it safe without major refactor, we'll just show the Previous Best as the context.
-                // (If you want full notes, we need to fetch them in the parent).
                 return previousBest ? `Last best: ${previousBest}lb` : null;
             }, [isEditing, previousBest]);
 
@@ -384,11 +376,9 @@
                         </div>
                         
                         {/* SKIP BUTTON AT TOP */}
-                        {!isLast && (
-                            <button onClick={() => { triggerHaptic(); playSound('skip'); onSkip(exercise); }} className="w-full mb-6 py-4 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg font-bold flex items-center justify-center gap-2 active:bg-gray-200">
-                                <span className="uppercase tracking-wide text-sm">Skip for now</span> <Icons.SkipForward size={20} />
-                            </button>
-                        )}
+                        <button onClick={() => { triggerHaptic(); playSound('skip'); onSkip(exercise); }} className="w-full mb-6 py-4 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg font-bold flex items-center justify-center gap-2 active:bg-gray-200">
+                            <span className="uppercase tracking-wide text-sm">Skip for now</span> <Icons.SkipForward size={20} />
+                        </button>
 
                         {/* REPLACED WITH ADJUSTABLE INPUTS */}
                         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -402,7 +392,7 @@
                                 <AdjustableInput id={`${exercise.id}-weight`} label="Weight" value={exercise.weight} onChange={v => onUpdate(exercise.id, 'weight', v)} step={1} unit="lbs" />
                             </div>
                              <div className="col-span-2">
-                                <AdjustableInput id={`${exercise.id}-time`} label="Time (Opt)" value={exercise.time} onChange={v => onUpdate(exercise.id, 'time', v)} step={1} unit="min" />
+                                <AdjustableInput id={`${exercise.id}-time`} label="Time" value={exercise.time} onChange={v => onUpdate(exercise.id, 'time', v)} step={1} unit="min" />
                             </div>
                         </div>
 
@@ -415,13 +405,15 @@
                             </div>
                             <hr />
                             <label htmlFor={`notes-${exercise.id}`} className="block text-sm font-bold text-gray-500 mb-1">Optional Notes</label>
-                            <textarea id={`notes-${exercise.id}`} aria-label="Notes" value={exercise.notes} onChange={(e) => onUpdate(exercise.id, 'notes', e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded focus:border-blue-600 focus:ring-4 focus:ring-blue-600/50" placeholder="Tap to type notes..." rows="2" />
+                            <textarea id={`notes-${exercise.id}`} aria-label="Notes" value={exercise.notes} onChange={(e) => onUpdate(exercise.id, 'notes', e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded focus:border-blue-600 focus:ring-4 focus:ring-blue-600/50" placeholder="" rows="2" />
                         </div>
                     </div>
                 );
             }
             
-            const isSaved = exercise.sets || exercise.weight;
+            // --- SAVED (COMPLETED) VIEW ---
+            const isSaved = exercise.isCompleted; 
+            
             const statusColor = isSaved ? "border-l-8 border-green-500 bg-white" : "border border-gray-300 bg-gray-50 opacity-70";
             const statusText = isSaved ? `Saved ✅` : "Not Started";
             const summaryText = [exercise.sets && `${exercise.sets} sets`, exercise.reps && `${exercise.reps} reps`, exercise.weight && `${exercise.weight}lb`].filter(Boolean).join(', ');
@@ -501,7 +493,7 @@
                             <div><AdjustableInput id="c-max" label="Max Incline" value={formData.maxIncline} onChange={v => handleChange('maxIncline', v)} step={1} unit="%" /></div>
                         </div>}
                         
-                        <div><label htmlFor="cardio-notes" className="block text-sm font-bold text-gray-800 mb-1">Notes</label><textarea id="cardio-notes" aria-label="Cardio notes" value={formData.notes} onChange={e => handleChange('notes', e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded bg-white" placeholder="How did it feel?" rows="3" /></div>
+                        <div><label htmlFor="cardio-notes" className="block text-sm font-bold text-gray-800 mb-1">Notes</label><textarea id="cardio-notes" aria-label="Cardio notes" value={formData.notes} onChange={e => handleChange('notes', e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded bg-white" placeholder="" rows="3" /></div>
                         <div className="flex gap-3 pt-4"><button type="button" onClick={() => { triggerHaptic(); onCancel(); }} className="flex-1 py-4 bg-gray-200 text-gray-800 rounded-lg font-bold text-lg flex items-center justify-center gap-2"><Icons.X size={24} /> Cancel</button><button type="submit" className="flex-[2] py-4 bg-indigo-700 text-white rounded-lg font-bold text-xl shadow flex items-center justify-center gap-2"><Icons.Check size={24} /> Save</button></div>
                     </div>
                 </form>
@@ -572,7 +564,27 @@
                 setReportText(generateReportText(filtered, filter));
             }, [filter, history]);
             const handleCopy = () => { triggerHaptic(); const ta = document.createElement("textarea"); ta.value = reportText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert("Report copied!"); };
-            const handleDownload = () => { triggerHaptic(); const blob = new Blob([reportText], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `Report.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); };
+            const handleDownload = () => { 
+                triggerHaptic(); 
+                const blob = new Blob([reportText], { type: 'text/plain' }); 
+                const url = URL.createObjectURL(blob); 
+                const a = document.createElement('a'); 
+                
+                // Fix filename timestamp using local time
+                const now = new Date();
+                const timestamp = now.getFullYear() + "-" + 
+                                 (now.getMonth()+1).toString().padStart(2, '0') + "-" + 
+                                 now.getDate().toString().padStart(2, '0') + "_" + 
+                                 now.getHours().toString().padStart(2, '0') + "-" + 
+                                 now.getMinutes().toString().padStart(2, '0');
+                                 
+                a.href = url; 
+                a.download = `EasyLog_Report_${filter}_${timestamp}.txt`; 
+                document.body.appendChild(a); 
+                a.click(); 
+                document.body.removeChild(a); 
+                URL.revokeObjectURL(url); 
+            };
             return (
                 <div className="space-y-6">
                     <div className="bg-white p-4 rounded-lg shadow"><h2 className="text-xl font-bold mb-4 text-center">Select Report Period</h2><div className="grid grid-cols-5 gap-1">{['day', 'week', 'month', 'year', 'all'].map(f => (<button key={f} onClick={() => { triggerHaptic(); setFilter(f); }} className={`py-3 px-1 rounded text-sm font-bold uppercase ${filter === f ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}>{f}</button>))}</div></div>
@@ -635,12 +647,26 @@
                 const savedCurrentSession = localStorage.getItem('current_session');
                 const savedSessionDate = localStorage.getItem('current_session_date');
                 const savedCustomDb = localStorage.getItem('custom_exercise_db');
+                const savedManualRoutine = localStorage.getItem('manual_routine');
                 const seenSplash = sessionStorage.getItem('seen_splash_v5');
 
                 if (savedHistory) setHistory(JSON.parse(savedHistory));
                 if (savedCustomDb) setCustomDb(JSON.parse(savedCustomDb));
+                
+                const todayStr = new Date().toDateString();
+                
+                // NEW LOGIC: CHECK FOR NEW DAY RESET
+                if (savedSessionDate && savedSessionDate !== todayStr) {
+                     // It's a new day. CLEAR manual overrides.
+                     localStorage.removeItem('manual_routine');
+                     setManualRoutine(null);
+                } else {
+                     // Same day, keep manual routine
+                     if (savedManualRoutine) setManualRoutine(savedManualRoutine);
+                }
+
                 if (savedCurrentSession && savedSessionDate) {
-                    if (savedSessionDate === new Date().toDateString()) {
+                    if (savedSessionDate === todayStr) {
                         setTodaysExercises(JSON.parse(savedCurrentSession));
                     }
                 }
@@ -653,21 +679,6 @@
                     setIsDataLoaded(true);
                 }, 800);
             }, []);
-
-            // Auto-refresh on visibility change (Fix for "Splash Screen not updating")
-            useEffect(() => {
-                const handleVisibilityChange = () => {
-                    if (document.visibilityState === 'visible') {
-                        setCurrentDate(new Date());
-                        // Re-load history if needed (in case user used another device? Unlikely for local app, but good hygiene)
-                        const savedHistory = localStorage.getItem('workout_history');
-                        if (savedHistory) setHistory(JSON.parse(savedHistory));
-                    }
-                };
-                document.addEventListener('visibilitychange', handleVisibilityChange);
-                return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-            }, []);
-
 
             // PERSISTENCE
             useEffect(() => { if(isDataLoaded) localStorage.setItem('current_session', JSON.stringify(todaysExercises)); }, [todaysExercises, isDataLoaded]);
@@ -689,6 +700,12 @@
                 sessionStorage.setItem('seen_splash_v5', 'true');
                 setShowSplash(false);
                 setView('bonus');
+            };
+            
+            // Manual Routine Setter with Persistence
+            const changeRoutine = (newRoutine) => {
+                setManualRoutine(newRoutine);
+                localStorage.setItem('manual_routine', newRoutine);
             };
 
             // Handles adding bonus entries
@@ -719,24 +736,32 @@
             
             const activeExercise = useMemo(() => {
                 if (todaysExercises.length === 0) return null;
-                if (editingId) return todaysExercises.find(ex => ex.id === editingId);
-                return todaysExercises.find(ex => !ex.sets && !ex.weight);
+                
+                // PRIORITY 1: Use editingId if set
+                if (editingId) {
+                    const found = todaysExercises.find(ex => ex.id === editingId);
+                    if (found) return found;
+                }
+                
+                // PRIORITY 2: Find first incomplete (using NEW FLAG 'isCompleted')
+                return todaysExercises.find(ex => !ex.isCompleted);
             }, [todaysExercises, editingId]);
 
             const upNextExercises = useMemo(() => {
                 if (!activeExercise) return [];
                 const activeIndex = todaysExercises.findIndex(ex => ex.id === activeExercise.id);
-                // Return everything AFTER active that is NOT saved
-                return todaysExercises.slice(activeIndex + 1).filter(ex => !ex.sets && !ex.weight);
+                // Return everything AFTER active that is NOT completed
+                return todaysExercises.slice(activeIndex + 1).filter(ex => !ex.isCompleted);
             }, [todaysExercises, activeExercise]);
 
             const completedExercises = useMemo(() => {
-                // Return everything that IS saved
-                return todaysExercises.filter(ex => ex.sets || ex.weight);
+                // Return everything that IS completed
+                return todaysExercises.filter(ex => ex.isCompleted);
             }, [todaysExercises]);
 
             const handleNextExercise = (currentExercise) => { 
                 triggerHaptic(); 
+                playSound('success');
                 // PR Check (Passive Gamification)
                 if (currentExercise.weight && currentExercise.previousWeight) {
                     const cleanWeight = parseFloat(currentExercise.weight.replace(/[^0-9.]/g, ''));
@@ -745,6 +770,9 @@
                         announce(`New PR on ${currentExercise.name}!`);
                     }
                 }
+
+                // MARK COMPLETED
+                setTodaysExercises(prev => prev.map(e => e.id === currentExercise.id ? { ...e, isCompleted: true } : e));
                 
                 setEditingId(null);
                 announce("Saved. Loading next.");
@@ -752,6 +780,7 @@
 
             const handleSkipExercise = (currentExercise) => { 
                 triggerHaptic(); 
+                playSound('skip');
                 const currentIndex = todaysExercises.findIndex(ex => ex.id === currentExercise.id); 
                 const newSession = [...todaysExercises]; 
                 newSession.splice(currentIndex, 1); 
@@ -762,13 +791,62 @@
                 announce(`Skipped. Now: ${newSession[currentIndex].name}.`); 
             };
 
-            const handleLoadLastWorkout = () => { triggerHaptic(); const lastWorkout = history.slice().reverse().find(w => !w.isCardio && w.routine === activeRoutine); if (!lastWorkout) { announce("No history."); return; } const newSession = lastWorkout.exercises.map(ex => ({ ...ex, id: Date.now() + Math.random(), previousWeight: ex.weight })); setTodaysExercises(newSession); if(newSession.length) setEditingId(newSession[0].id); announce("Loaded."); };
-            const handleAddExercise = (exerciseName, isNewCustom) => { triggerHaptic(); if(isNewCustom) setCustomDb(prev => { const list = prev[activeRoutine] || []; if (!list.includes(exerciseName)) return { ...prev, [activeRoutine]: [...list, exerciseName] }; return prev; }); const newExercise = { id: Date.now(), name: exerciseName, sets:'', reps:'', weight:'', time:'', notes:'' }; setTodaysExercises([...todaysExercises, newExercise]); setEditingId(newExercise.id); announce("Added."); };
+            const handleLoadLastWorkout = () => { 
+                triggerHaptic(); 
+                const lastWorkout = history.slice().reverse().find(w => !w.isCardio && w.routine === activeRoutine); 
+                if (!lastWorkout) { announce("No history."); return; } 
+                
+                // FIX: Explicitly set isCompleted: false when loading
+                const newSession = lastWorkout.exercises.map(ex => ({ 
+                    ...ex, 
+                    id: Date.now() + Math.random(), 
+                    previousWeight: ex.weight,
+                    isCompleted: false // MARK AS NEW (PENDING)
+                })); 
+                
+                setTodaysExercises(newSession); 
+                if(newSession.length) setEditingId(newSession[0].id); 
+                announce("Loaded."); 
+            };
+
+            const handleAddExercise = (exerciseName, isNewCustom) => { 
+                triggerHaptic(); 
+                if(isNewCustom) setCustomDb(prev => { const list = prev[activeRoutine] || []; if (!list.includes(exerciseName)) return { ...prev, [activeRoutine]: [...list, exerciseName] }; return prev; }); 
+                const newExercise = { id: Date.now(), name: exerciseName, sets:'', reps:'', weight:'', time:'', notes:'', isCompleted: false }; 
+                setTodaysExercises([...todaysExercises, newExercise]); 
+                setEditingId(newExercise.id); 
+                announce("Added."); 
+            };
+
             const updateExercise = (id, field, value) => { if (field === 'timer_finished') { announce("Rest finished!"); return; } setTodaysExercises(prev => prev.map(ex => ex.id === id ? { ...ex, [field]: value } : ex)); };
             const removeExercise = (id, name) => { setTodaysExercises(prev => prev.filter(ex => ex.id !== id)); if (editingId === id) setEditingId(null); announce("Removed."); };
             const finishWorkout = () => { triggerHaptic(); if (!todaysExercises.length) return; setEditingId(null); const record = { id: Date.now(), date: new Date().toString(), routine: activeRoutine, isCardio: false, exercises: todaysExercises }; setHistory([...history, record]); setTodaysExercises([]); localStorage.removeItem('current_session'); setManualRoutine(null); setView('menu'); announce("Saved."); };
             const handleSaveCardio = (activity, metrics) => { const record = { id: Date.now(), date: new Date().toString(), isCardio: true, activity, metrics }; setHistory([...history, record]); setView('menu'); announce("Saved."); };
-            const backupData = () => { triggerHaptic(); const data = { history, currentSession: todaysExercises, customDb, exportDate: new Date().toString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `backup_v5.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+            
+            const backupData = () => { 
+                triggerHaptic(); 
+                const data = { history, currentSession: todaysExercises, customDb, exportDate: new Date().toString() }; 
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); 
+                const url = URL.createObjectURL(blob); 
+                const a = document.createElement('a'); 
+                
+                // Fix filename timestamp using local time
+                const now = new Date();
+                const timestamp = now.getFullYear() + "-" + 
+                                 (now.getMonth()+1).toString().padStart(2, '0') + "-" + 
+                                 now.getDate().toString().padStart(2, '0') + "_" + 
+                                 now.getHours().toString().padStart(2, '0') + "-" + 
+                                 now.getMinutes().toString().padStart(2, '0');
+
+                a.href = url; 
+                a.download = `EasyLog_${timestamp}.json`; 
+                document.body.appendChild(a); 
+                a.click(); 
+                document.body.removeChild(a); 
+                URL.revokeObjectURL(url); 
+                announce("Backup file generated.");
+            };
+
             const restoreData = (event) => { triggerHaptic(); const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { const data = JSON.parse(e.target.result); if(data.history) setHistory(data.history); if(data.currentSession) setTodaysExercises(data.currentSession); if(data.customDb) setCustomDb(data.customDb); announce("Restored."); }; reader.readAsText(file); };
 
             const availableExercises = [...(DEFAULT_DB[activeRoutine] || []), ...(customDb[activeRoutine] || [])].sort();
@@ -785,33 +863,32 @@
                     <div role="status" aria-live="polite" className="sr-only" ref={announcementRef}>{announcement}</div>
                     <header className="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-20">
                         <div className="max-w-3xl mx-auto flex justify-between items-center">
-                            <div><h1 ref={headerRef} tabIndex="-1" className="text-xl font-extrabold flex items-center gap-2 outline-none focus:ring-2 focus:ring-blue-400 rounded px-1">{view === 'menu' ? 'Easy Log v7.0' : view === 'weights' ? 'Weight Training' : view === 'cardio' ? 'Cardio Log' : view === 'bonus' ? 'Bonus Zone' : view === 'reports' ? 'Reports' : 'Settings'}</h1><p className="text-sm text-slate-300 font-medium mt-1">{formatDate(currentDate)}</p></div>
-                            <div className="flex gap-2">{view !== 'menu' && <button onClick={() => {triggerHaptic(); setView('menu');}} className="p-3 bg-slate-800 rounded hover:bg-slate-700"><Icons.Home size={24} /></button>}<button onClick={() => {triggerHaptic(); setView('menu');}} className="p-3 bg-blue-800 text-white rounded font-bold text-xs hover:bg-blue-700">DAILY STATUS</button><button onClick={() => {triggerHaptic(); setView(view === 'settings' ? 'menu' : 'settings');}} className="p-3 bg-slate-800 rounded hover:bg-slate-700"><Icons.Settings size={24} /></button></div>
+                            <div><h1 ref={headerRef} tabIndex="-1" className="text-xl font-extrabold flex items-center gap-2 outline-none focus:ring-2 focus:ring-blue-400 rounded px-1">{view === 'menu' ? 'Easy Log v7.3' : view === 'weights' ? 'Weight Training' : view === 'cardio' ? 'Cardio Log' : view === 'bonus' ? 'Bonus Zone' : view === 'reports' ? 'Reports' : 'Settings'}</h1><p className="text-sm text-slate-300 font-medium mt-1">{formatDate(currentDate)}</p></div>
+                            <div className="flex gap-2">{view !== 'menu' && <button onClick={() => {triggerHaptic(); setView('menu');}} className="p-3 bg-slate-800 rounded hover:bg-slate-700"><Icons.Home size={24} /></button>}<button onClick={() => {triggerHaptic(); setCurrentDate(new Date()); setShowSplash(true);}} className="p-3 bg-blue-800 text-white rounded font-bold text-xs hover:bg-blue-700">DAILY STATUS</button><button onClick={() => {triggerHaptic(); setView(view === 'settings' ? 'menu' : 'settings');}} className="p-3 bg-slate-800 rounded hover:bg-slate-700"><Icons.Settings size={24} /></button></div>
                         </div>
                     </header>
                     <main className="max-w-3xl mx-auto p-4">
                         {view === 'menu' && (
                             <div className="space-y-6 mt-4">
                                 {currentDate.getDay() === 5 && <div className="bg-yellow-100 border-l-8 border-yellow-500 text-yellow-900 p-4 rounded-lg flex items-center gap-3" role="alert"><Icons.AlertTriangle size={28} className="flex-shrink-0" /><span className="font-bold text-lg">It's Friday. Don't forget to backup!</span></div>}
-                                <button onClick={() => {triggerHaptic(); setView('weights');}} className="w-full p-8 bg-blue-700 text-white rounded-xl shadow-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Dumbbell size={40} /><span className="text-3xl font-extrabold">Weight Training</span></div><p className="text-blue-200 text-lg font-medium">{getRoutineForDay(currentDate)} Routine</p></button>
-                                <button onClick={() => {triggerHaptic(); setView('cardio');}} className="w-full p-8 bg-indigo-700 text-white rounded-xl shadow-lg hover:bg-indigo-800 focus:ring-4 focus:ring-indigo-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Activity size={40} /><span className="text-3xl font-extrabold">Cardio Log</span></div><p className="text-indigo-200 text-lg font-medium">Log Run, Cycle, or Walk</p></button>
-                                <button onClick={() => {triggerHaptic(); setView('reports');}} className="w-full p-6 bg-white text-slate-800 rounded-xl shadow border border-gray-200 hover:bg-gray-50 text-left flex items-center gap-4"><Icons.List size={32} className="text-slate-500" /><span className="text-xl font-bold">Reports & Export</span></button>
-                                <button onClick={() => {triggerHaptic(); setShowSplash(true);}} className="w-full p-4 bg-gray-200 text-gray-800 rounded-lg font-bold text-center border border-gray-300 hover:bg-gray-300">View Daily Status</button>
+                                <button onClick={() => {triggerHaptic(); setView('weights');}} className="w-full p-8 bg-blue-700 text-white rounded-xl shadow-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Dumbbell size={40} /><span className="text-3xl font-extrabold">Upper Body</span></div></button>
+                                <button onClick={() => {triggerHaptic(); setView('cardio');}} className="w-full p-8 bg-indigo-700 text-white rounded-xl shadow-lg hover:bg-indigo-800 focus:ring-4 focus:ring-indigo-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Activity size={40} /><span className="text-3xl font-extrabold">Cardio</span></div></button>
+                                <button onClick={() => {triggerHaptic(); setView('reports');}} className="w-full p-6 bg-white text-slate-800 rounded-xl shadow border border-gray-200 hover:bg-gray-50 text-left flex items-center gap-4"><Icons.List size={32} className="text-slate-500" /><span className="text-xl font-bold">Reports</span></button>
+                                <button onClick={() => {triggerHaptic(); setCurrentDate(new Date()); setShowSplash(true);}} className="w-full p-4 bg-gray-200 text-gray-800 rounded-lg font-bold text-center border border-gray-300 hover:bg-gray-300">View Daily Status</button>
                             </div>
                         )}
                         {view === 'bonus' && <BonusView onBack={() => {triggerHaptic(); setView('menu');}} onSaveBonus={handleBonusSave} availableExercises={masterExerciseList} />}
                         {view === 'cardio' && <CardioForm history={history} onSave={handleSaveCardio} onCancel={() => setView('menu')} />}
                         {view === 'weights' && (
                             <div className="space-y-6">
-                                <section className="bg-white p-6 rounded-lg shadow-sm border-l-8 border-blue-600"><label htmlFor="routine-select" className="block text-sm font-bold text-gray-600 mb-1">Current Routine</label><div className="relative"><select id="routine-select" value={activeRoutine} onChange={(e) => setManualRoutine(e.target.value)} className="block w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-2xl font-extrabold py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-blue-500"><option value="Upper Body">Upper Body</option><option value="Lower Body">Lower Body</option><option value="Core">Core</option></select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><Icons.ChevronDown size={24} /></div></div></section>
+                                <section className="bg-white p-6 rounded-lg shadow-sm border-l-8 border-blue-600"><label htmlFor="routine-select" className="block text-sm font-bold text-gray-600 mb-1">Current Routine</label><div className="relative"><select id="routine-select" value={activeRoutine} onChange={(e) => changeRoutine(e.target.value)} className="block w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-2xl font-extrabold py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-blue-500"><option value="Upper Body">Upper Body</option><option value="Lower Body">Lower Body</option><option value="Core">Core</option></select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><Icons.ChevronDown size={24} /></div></div></section>
                                 {todaysExercises.length === 0 && history.some(w => !w.isCardio && w.routine === activeRoutine) && <button onClick={handleLoadLastWorkout} className="w-full bg-blue-50 text-blue-900 border-2 border-blue-200 py-6 px-6 rounded-lg font-bold text-xl shadow flex items-center justify-center gap-3"><Icons.RefreshCw size={28} /> Load Last {activeRoutine}</button>}
                                 
-                                {/* ZONE 1: ACTIVE FOCUS */}
+                                {/* ZONE 1: CURRENT EXERCISE */}
                                 {activeExercise ? (
                                     <div aria-live="polite">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
-                                            <h2 className="text-sm font-bold text-blue-600 uppercase tracking-wide">Current Focus</h2>
+                                        <div className="flex items-center gap-2 mb-2 p-2 bg-blue-100 rounded">
+                                            <h2 className="text-xl font-extrabold text-blue-900 uppercase tracking-wide">Current Exercise</h2>
                                         </div>
                                         <ExerciseItem 
                                             key={activeExercise.id} 
@@ -830,11 +907,11 @@
                                     todaysExercises.length > 0 && <div className="p-4 bg-green-100 border border-green-300 rounded-lg text-green-800 font-bold text-center">All Exercises Completed!</div>
                                 )}
 
-                                {/* ZONE 2: UP NEXT */}
-                                {upNextExercises.length > 0 && (
-                                    <div>
-                                        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 pl-1">Up Next</h2>
-                                        <ul className="space-y-2 list-none p-0 opacity-60">
+                                {/* ZONE 2: UP NEXT QUEUE */}
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-600 uppercase tracking-wide mb-2 pl-1 border-b pb-1">Up Next Queue</h2>
+                                    {upNextExercises.length > 0 ? (
+                                        <ul className="space-y-2 list-none p-0 opacity-70">
                                             {upNextExercises.map((ex, index) => (
                                                 <li key={ex.id} className="bg-white p-4 rounded-lg border border-gray-200 flex justify-between">
                                                     <span className="font-bold text-gray-700">{ex.name}</span>
@@ -842,13 +919,15 @@
                                                 </li>
                                             ))}
                                         </ul>
-                                    </div>
-                                )}
+                                    ) : (
+                                        <p className="text-gray-400 italic pl-1">Queue is empty.</p>
+                                    )}
+                                </div>
 
                                 {/* ZONE 3: COMPLETED LOG */}
-                                {completedExercises.length > 0 && (
-                                    <div>
-                                        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 pl-1">Completed Log</h2>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-600 uppercase tracking-wide mb-2 pl-1 border-b pb-1">Completed Log</h2>
+                                    {completedExercises.length > 0 ? (
                                         <ul className="space-y-2 list-none p-0">
                                             {completedExercises.map((ex, index) => (
                                                 <ExerciseItem 
@@ -865,19 +944,23 @@
                                                 />
                                             ))}
                                         </ul>
-                                    </div>
-                                )}
+                                    ) : (
+                                        <p className="text-gray-400 italic pl-1">Nothing completed yet.</p>
+                                    )}
+                                </div>
 
-                                <AddExerciseForm onAdd={handleAddExercise} routine={activeRoutine} availableExercises={availableExercises} />
+                                {/* ZONE 4: ADD NEW */}
+                                <div className="mt-8 border-t pt-6">
+                                    <h2 className="text-lg font-bold text-gray-600 uppercase tracking-wide mb-2 pl-1">Add New Exercise</h2>
+                                    <AddExerciseForm onAdd={handleAddExercise} routine={activeRoutine} availableExercises={availableExercises} />
+                                </div>
                                 
-                                {todaysExercises.length > 0 && !activeExercise && (
-                                    <button onClick={finishWorkout} className="w-full bg-green-700 text-white text-2xl font-bold py-5 px-6 rounded-lg shadow-lg mt-8 flex items-center justify-center gap-3 mb-10"><Icons.Save size={32} /> Finish Workout</button>
-                                )}
+                                <button onClick={finishWorkout} className="w-full bg-green-700 text-white text-2xl font-bold py-5 px-6 rounded-lg shadow-lg mt-8 flex items-center justify-center gap-3 mb-10"><Icons.Save size={32} /> Finish Workout</button>
                             </div>
                         )}
                         {view === 'reports' && <ReportsView history={history} onBack={() => setView('menu')} />}
                         {view === 'settings' && (
-                            <div className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-6"><h2 className="text-2xl font-bold mb-4">Settings</h2><button onClick={backupData} className="w-full flex items-center justify-center gap-3 bg-gray-800 text-white p-5 rounded-lg font-bold text-lg"><Icons.Download size={24} /> Backup Data</button><hr className="border-gray-300" /><div className="relative"><input type="file" accept=".json" onChange={restoreData} className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" id="restore-input" /><label htmlFor="restore-input" className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white p-5 rounded-lg font-bold text-lg cursor-pointer"><Icons.Upload size={24} /> Restore Data</label></div></div>
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-6"><button onClick={backupData} className="w-full flex items-center justify-center gap-3 bg-gray-800 text-white p-5 rounded-lg font-bold text-lg"><Icons.Download size={24} /> Backup Data</button><hr className="border-gray-300" /><div className="relative"><input type="file" accept=".json" onChange={restoreData} className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" id="restore-input" /><label htmlFor="restore-input" className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white p-5 rounded-lg font-bold text-lg cursor-pointer"><Icons.Upload size={24} /> Restore Data</label></div></div>
                         )}
                     </main>
                 </div>
