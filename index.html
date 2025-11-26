@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Easy Log v9.1</title>
+    <title>Easy Log v9.2</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -141,7 +141,7 @@
             return dates.length;
         };
 
-        // --- ADJUSTABLE INPUT COMPONENT ---
+        // --- ADJUSTABLE INPUT COMPONENT (FIXED MIN/MAX) ---
         function AdjustableInput({ id, label, value, onChange, step, unit }) {
             const [isManual, setIsManual] = useState(false);
             const inputRef = useRef(null);
@@ -275,7 +275,7 @@
                     </div>
 
                     <button 
-                        onClick={() => { triggerHaptic(); playSound('success'); allDone ? onBonus() : onDismiss(); }}
+                        onClick={() => { triggerHaptic(); allDone ? onBonus() : onDismiss(); }}
                         className={`w-full text-white font-bold text-xl py-6 rounded-xl shadow-lg active:scale-95 transition-transform mt-6 ${allDone ? 'bg-green-600 hover:bg-green-500' : 'bg-blue-600 hover:bg-blue-500'}`}
                     >
                         {allDone ? "I'm feeling extra good today! 🎉" : "Let's get this day going"}
@@ -822,31 +822,7 @@
             const removeExercise = (id, name) => { setTodaysExercises(prev => prev.filter(ex => ex.id !== id)); if (editingId === id) setEditingId(null); announce("Removed."); };
             const finishWorkout = () => { triggerHaptic(); if (!todaysExercises.length) return; setEditingId(null); const record = { id: Date.now(), date: new Date().toString(), routine: activeRoutine, isCardio: false, exercises: todaysExercises }; setHistory([...history, record]); setTodaysExercises([]); localStorage.removeItem('current_session'); setManualRoutine(null); setView('menu'); announce("Saved."); };
             const handleSaveCardio = (activity, metrics) => { const record = { id: Date.now(), date: new Date().toString(), isCardio: true, activity, metrics }; setHistory([...history, record]); setView('menu'); announce("Saved."); };
-            
-            const backupData = () => { 
-                triggerHaptic(); 
-                const data = { history, currentSession: todaysExercises, customDb, exportDate: new Date().toString() }; 
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); 
-                const url = URL.createObjectURL(blob); 
-                const a = document.createElement('a'); 
-                
-                // Fix filename timestamp using local time
-                const now = new Date();
-                const timestamp = now.getFullYear() + "-" + 
-                                 (now.getMonth()+1).toString().padStart(2, '0') + "-" + 
-                                 now.getDate().toString().padStart(2, '0') + "_" + 
-                                 now.getHours().toString().padStart(2, '0') + "-" + 
-                                 now.getMinutes().toString().padStart(2, '0');
-
-                a.href = url; 
-                a.download = `EasyLog_${timestamp}.json`; 
-                document.body.appendChild(a); 
-                a.click(); 
-                document.body.removeChild(a); 
-                URL.revokeObjectURL(url); 
-                announce("Backup file generated.");
-            };
-
+            const backupData = () => { triggerHaptic(); const data = { history, currentSession: todaysExercises, customDb, exportDate: new Date().toString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `backup_v5.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
             const restoreData = (event) => { triggerHaptic(); const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = (e) => { const data = JSON.parse(e.target.result); if(data.history) setHistory(data.history); if(data.currentSession) setTodaysExercises(data.currentSession); if(data.customDb) setCustomDb(data.customDb); announce("Restored."); }; reader.readAsText(file); };
 
             const availableExercises = [...(DEFAULT_DB[activeRoutine] || []), ...(customDb[activeRoutine] || [])].sort();
@@ -871,9 +847,9 @@
                         {view === 'menu' && (
                             <div className="space-y-6 mt-4">
                                 {currentDate.getDay() === 5 && <div className="bg-yellow-100 border-l-8 border-yellow-500 text-yellow-900 p-4 rounded-lg flex items-center gap-3" role="alert"><Icons.AlertTriangle size={28} className="flex-shrink-0" /><span className="font-bold text-lg">It's Friday. Don't forget to backup!</span></div>}
-                                <button onClick={() => {triggerHaptic(); setView('weights');}} className="w-full p-8 bg-blue-700 text-white rounded-xl shadow-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Dumbbell size={40} /><span className="text-3xl font-extrabold">Upper Body</span></div></button>
-                                <button onClick={() => {triggerHaptic(); setView('cardio');}} className="w-full p-8 bg-indigo-700 text-white rounded-xl shadow-lg hover:bg-indigo-800 focus:ring-4 focus:ring-indigo-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Activity size={40} /><span className="text-3xl font-extrabold">Cardio</span></div></button>
-                                <button onClick={() => {triggerHaptic(); setView('reports');}} className="w-full p-6 bg-white text-slate-800 rounded-xl shadow border border-gray-200 hover:bg-gray-50 text-left flex items-center gap-4"><Icons.List size={32} className="text-slate-500" /><span className="text-xl font-bold">Reports</span></button>
+                                <button onClick={() => {triggerHaptic(); setView('weights');}} className="w-full p-8 bg-blue-700 text-white rounded-xl shadow-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Dumbbell size={40} /><span className="text-3xl font-extrabold">Weight Training</span></div><p className="text-blue-200 text-lg font-medium">{getRoutineForDay(currentDate)} Routine</p></button>
+                                <button onClick={() => {triggerHaptic(); setView('cardio');}} className="w-full p-8 bg-indigo-700 text-white rounded-xl shadow-lg hover:bg-indigo-800 focus:ring-4 focus:ring-indigo-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Activity size={40} /><span className="text-3xl font-extrabold">Cardio Log</span></div><p className="text-indigo-200 text-lg font-medium">Log Run, Cycle, or Walk</p></button>
+                                <button onClick={() => {triggerHaptic(); setView('reports');}} className="w-full p-6 bg-white text-slate-800 rounded-xl shadow border border-gray-200 hover:bg-gray-50 text-left flex items-center gap-4"><Icons.List size={32} className="text-slate-500" /><span className="text-xl font-bold">Reports & Export</span></button>
                                 <button onClick={() => {triggerHaptic(); setCurrentDate(new Date()); setShowSplash(true);}} className="w-full p-4 bg-gray-200 text-gray-800 rounded-lg font-bold text-center border border-gray-300 hover:bg-gray-300">View Daily Status</button>
                             </div>
                         )}
@@ -881,14 +857,15 @@
                         {view === 'cardio' && <CardioForm history={history} onSave={handleSaveCardio} onCancel={() => setView('menu')} />}
                         {view === 'weights' && (
                             <div className="space-y-6">
-                                <section className="bg-white p-6 rounded-lg shadow-sm border-l-8 border-blue-600"><label htmlFor="routine-select" className="block text-sm font-bold text-gray-600 mb-1">Current Routine</label><div className="relative"><select id="routine-select" value={activeRoutine} onChange={(e) => changeRoutine(e.target.value)} className="block w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-2xl font-extrabold py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-blue-500"><option value="Upper Body">Upper Body</option><option value="Lower Body">Lower Body</option><option value="Core">Core</option></select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><Icons.ChevronDown size={24} /></div></div></section>
+                                <section className="bg-white p-6 rounded-lg shadow-sm border-l-8 border-blue-600"><label htmlFor="routine-select" className="block text-sm font-bold text-gray-600 mb-1">Current Routine</label><div className="relative"><select id="routine-select" value={activeRoutine} onChange={(e) => setManualRoutine(e.target.value)} className="block w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-2xl font-extrabold py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-blue-500"><option value="Upper Body">Upper Body</option><option value="Lower Body">Lower Body</option><option value="Core">Core</option></select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><Icons.ChevronDown size={24} /></div></div></section>
                                 {todaysExercises.length === 0 && history.some(w => !w.isCardio && w.routine === activeRoutine) && <button onClick={handleLoadLastWorkout} className="w-full bg-blue-50 text-blue-900 border-2 border-blue-200 py-6 px-6 rounded-lg font-bold text-xl shadow flex items-center justify-center gap-3"><Icons.RefreshCw size={28} /> Load Last {activeRoutine}</button>}
                                 
-                                {/* ZONE 1: CURRENT EXERCISE */}
+                                {/* ZONE 1: ACTIVE FOCUS */}
                                 {activeExercise ? (
                                     <div aria-live="polite">
-                                        <div className="flex items-center gap-2 mb-2 p-2 bg-blue-100 rounded">
-                                            <h2 className="text-xl font-extrabold text-blue-900 uppercase tracking-wide">Current Exercise</h2>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
+                                            <h2 className="text-sm font-bold text-blue-600 uppercase tracking-wide">Current Focus</h2>
                                         </div>
                                         <ExerciseItem 
                                             key={activeExercise.id} 
@@ -907,11 +884,11 @@
                                     todaysExercises.length > 0 && <div className="p-4 bg-green-100 border border-green-300 rounded-lg text-green-800 font-bold text-center">All Exercises Completed!</div>
                                 )}
 
-                                {/* ZONE 2: UP NEXT QUEUE */}
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-600 uppercase tracking-wide mb-2 pl-1 border-b pb-1">Up Next Queue</h2>
-                                    {upNextExercises.length > 0 ? (
-                                        <ul className="space-y-2 list-none p-0 opacity-70">
+                                {/* ZONE 2: UP NEXT */}
+                                {upNextExercises.length > 0 && (
+                                    <div>
+                                        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 pl-1">Up Next</h2>
+                                        <ul className="space-y-2 list-none p-0 opacity-60">
                                             {upNextExercises.map((ex, index) => (
                                                 <li key={ex.id} className="bg-white p-4 rounded-lg border border-gray-200 flex justify-between">
                                                     <span className="font-bold text-gray-700">{ex.name}</span>
@@ -919,15 +896,13 @@
                                                 </li>
                                             ))}
                                         </ul>
-                                    ) : (
-                                        <p className="text-gray-400 italic pl-1">Queue is empty.</p>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
 
                                 {/* ZONE 3: COMPLETED LOG */}
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-600 uppercase tracking-wide mb-2 pl-1 border-b pb-1">Completed Log</h2>
-                                    {completedExercises.length > 0 ? (
+                                {completedExercises.length > 0 && (
+                                    <div>
+                                        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2 pl-1">Completed Log</h2>
                                         <ul className="space-y-2 list-none p-0">
                                             {completedExercises.map((ex, index) => (
                                                 <ExerciseItem 
@@ -944,23 +919,19 @@
                                                 />
                                             ))}
                                         </ul>
-                                    ) : (
-                                        <p className="text-gray-400 italic pl-1">Nothing completed yet.</p>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
 
-                                {/* ZONE 4: ADD NEW */}
-                                <div className="mt-8 border-t pt-6">
-                                    <h2 className="text-lg font-bold text-gray-600 uppercase tracking-wide mb-2 pl-1">Add New Exercise</h2>
-                                    <AddExerciseForm onAdd={handleAddExercise} routine={activeRoutine} availableExercises={availableExercises} />
-                                </div>
+                                <AddExerciseForm onAdd={handleAddExercise} routine={activeRoutine} availableExercises={availableExercises} />
                                 
-                                <button onClick={finishWorkout} className="w-full bg-green-700 text-white text-2xl font-bold py-5 px-6 rounded-lg shadow-lg mt-8 flex items-center justify-center gap-3 mb-10"><Icons.Save size={32} /> Finish Workout</button>
+                                {todaysExercises.length > 0 && !activeExercise && (
+                                    <button onClick={finishWorkout} className="w-full bg-green-700 text-white text-2xl font-bold py-5 px-6 rounded-lg shadow-lg mt-8 flex items-center justify-center gap-3 mb-10"><Icons.Save size={32} /> Finish Workout</button>
+                                )}
                             </div>
                         )}
                         {view === 'reports' && <ReportsView history={history} onBack={() => setView('menu')} />}
                         {view === 'settings' && (
-                            <div className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-6"><button onClick={backupData} className="w-full flex items-center justify-center gap-3 bg-gray-800 text-white p-5 rounded-lg font-bold text-lg"><Icons.Download size={24} /> Backup Data</button><hr className="border-gray-300" /><div className="relative"><input type="file" accept=".json" onChange={restoreData} className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" id="restore-input" /><label htmlFor="restore-input" className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white p-5 rounded-lg font-bold text-lg cursor-pointer"><Icons.Upload size={24} /> Restore Data</label></div></div>
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-6"><h2 className="text-2xl font-bold mb-4">Settings</h2><button onClick={backupData} className="w-full flex items-center justify-center gap-3 bg-gray-800 text-white p-5 rounded-lg font-bold text-lg"><Icons.Download size={24} /> Backup Data</button><hr className="border-gray-300" /><div className="relative"><input type="file" accept=".json" onChange={restoreData} className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" id="restore-input" /><label htmlFor="restore-input" className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white p-5 rounded-lg font-bold text-lg cursor-pointer"><Icons.Upload size={24} /> Restore Data</label></div></div>
                         )}
                     </main>
                 </div>
