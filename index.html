@@ -564,6 +564,7 @@
                                 </button>
                             ))}
                         </div>
+                        <button onClick={() => { triggerHaptic(); onCancel(); }} className="w-full mt-6 py-4 text-gray-600 font-bold text-lg flex items-center justify-center gap-2"><Icons.X size={24} /> Cancel</button>
                     </div>
                 );
             }
@@ -606,7 +607,7 @@
                             <AdjustableInput id="c-effort" label="Effort Score (1-10)" value={formData.effort} onChange={v => handleChange('effort', v)} step={1} unit="" min={1} max={10} />
                         </div>
 
-                        <div className="flex gap-3 pt-4"><button type="submit" className="flex-[2] py-4 bg-indigo-700 text-white rounded-lg font-bold text-xl shadow flex items-center justify-center gap-2"><Icons.Check size={24} /> Save</button></div>
+                        <div className="flex gap-3 pt-4"><button type="button" onClick={() => { triggerHaptic(); onCancel(); }} className="flex-1 py-4 bg-gray-200 text-gray-800 rounded-lg font-bold text-lg flex items-center justify-center gap-2"><Icons.X size={24} /> Cancel</button><button type="submit" className="flex-[2] py-4 bg-indigo-700 text-white rounded-lg font-bold text-xl shadow flex items-center justify-center gap-2"><Icons.Check size={24} /> Save</button></div>
                     </div>
                 </form>
             );
@@ -828,7 +829,7 @@
 
             // PERSISTENCE
             useEffect(() => { if(isDataLoaded) localStorage.setItem('current_session', JSON.stringify(todaysExercises)); }, [todaysExercises, isDataLoaded]);
-            useEffect(() => { if(isDataLoaded) localStorage.setItem('current_session_date', new Date().toLocaleDateString()); }, [todaysExercises, isDataLoaded]);
+            useEffect(() => { if(isDataLoaded) localStorage.setItem('current_session_date', new Date().toDateString()); }, [todaysExercises, isDataLoaded]);
             useEffect(() => { if(isDataLoaded) localStorage.setItem('workout_history', JSON.stringify(history)); }, [history, isDataLoaded]);
             useEffect(() => { if(isDataLoaded) localStorage.setItem('custom_exercise_db', JSON.stringify(customDb)); }, [customDb, isDataLoaded]);
 
@@ -1101,6 +1102,9 @@
                         {view === 'cardio' && <CardioForm history={history} onSave={handleSaveCardio} onCancel={() => setView('menu')} />}
                         {view === 'weights' && (
                             <div className="space-y-6">
+                                <section className="bg-white p-6 rounded-lg shadow-sm border-l-8 border-blue-600"><label htmlFor="routine-select" className="block text-sm font-bold text-gray-600 mb-1">Current Routine</label><div className="relative"><select id="routine-select" value={activeRoutine} onChange={(e) => changeRoutine(e.target.value)} className="block w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-2xl font-extrabold py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-blue-500"><option value="Upper Body">Upper Body</option><option value="Lower Body">Lower Body</option><option value="Core">Core</option></select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><Icons.ChevronDown size={24} /></div></div></section>
+                                {todaysExercises.length === 0 && history.some(w => !w.isCardio && w.routine === activeRoutine) && <button onClick={handleLoadLastWorkout} className="w-full bg-blue-50 text-blue-900 border-2 border-blue-200 py-6 px-6 rounded-lg font-bold text-xl shadow flex items-center justify-center gap-3"><Icons.RefreshCw size={28} /> Load Last {activeRoutine}</button>}
+                                
                                 {/* ZONE 1: CURRENT EXERCISE */}
                                 <h2 className="text-lg font-bold text-gray-600 uppercase tracking-wide mb-2 pl-1 border-b pb-1">Current Exercise</h2>
                                 {activeExercise ? (
