@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Easy Log v25.8</title>
+    <title>Easy Log v25.12</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,9 +25,10 @@
         }
         
         #error-message {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #fee2e2; color: #7f1d1d; padding: 20px; z-index: 10000;
             font-family: monospace; white-space: pre-wrap; overflow: auto;
+            display: none; /* Initially hidden */
         }
 
         .spinner {
@@ -194,12 +195,6 @@
             }
         };
 
-        const calculateTotalActiveDays = (history) => {
-            if (!history || history.length === 0) return 0;
-            const dates = [...new Set(history.map(h => new Date(h.date).toDateString()))];
-            return dates.length;
-        };
-
         const calculateBMI = (weight, height) => {
             if (!weight || !height) return { val: '--', status: 'Unknown' };
             const w = parseFloat(weight);
@@ -246,18 +241,23 @@
                 triggerHaptic();
                 playSound(direction === 'up' ? 'success' : 'skip'); 
                 
-                const cleanStep = step < 1 ? 10 : 1;
-                const cleanVal = Math.round(currentVal * cleanStep);
-                const cleanAdd = Math.round(step * cleanStep);
+                // Use a factor to safely multiply/divide floating point steps for accurate arithmetic
+                const factor = step < 1 ? 100 : 1; 
                 
+                const cleanCurrentVal = Math.round(currentVal * factor);
+                const cleanStep = Math.round(step * factor);
+
                 let newVal;
-                if (direction === 'up') newVal = (cleanVal + cleanAdd) / cleanStep;
-                else newVal = (cleanVal - cleanAdd) / cleanStep;
+                if (direction === 'up') newVal = (cleanCurrentVal + cleanStep) / factor;
+                else newVal = (cleanCurrentVal - cleanStep) / factor;
                 
+                // Ensure correct formatting for display (e.g., 10.0 instead of 10)
+                const formattedNewVal = step < 1 ? newVal.toFixed(1) : newVal.toString();
+
                 if (newVal < min) newVal = min;
                 if (newVal > max) newVal = max;
                 
-                onChange(newVal.toString());
+                onChange(newVal.toString()); // Pass the numerical string back
             };
 
             const handleKeyDown = (e) => {
@@ -319,7 +319,6 @@
         // --- SPLASH SCREEN COMPONENT ---
         function SplashScreen({ onGoToMenu, routine, history, currentSession, onBonus, onJumpToCardio, onJumpToWeights, onChangeRoutine, onVitals }) {
             const [greeting] = useState(getGreeting());
-            const [activeDays] = useState(calculateTotalActiveDays(history));
             
             // Failsafe to remove loader once React mounts
             useEffect(() => {
@@ -368,13 +367,15 @@
                 return <span aria-label="Not started"><Icons.Circle className="text-gray-300" /></span>;
             };
             
-            const InteractiveRow = ({ label, status, onClick }) => (
+            const InteractiveRow = ({ label, status, onClick, activityName }) => (
                 <button 
                     onClick={() => { triggerHaptic(); onClick(); }} 
                     className="w-full flex items-center justify-between p-2 rounded hover:bg-slate-700 text-left active:bg-slate-600 transition-colors"
+                    aria-label={`Log ${label}`} // IMPROVEMENT: Explicit action verb
                 >
                     <span className="flex items-center gap-2 text-base">
-                        {label} <span className="text-xs text-slate-400">›</span>
+                        {label} 
+                        {/* IMPROVEMENT: Removed redundant visual arrow hint */}
                     </span>
                     <StatusIcon status={status} />
                 </button>
@@ -398,40 +399,52 @@
 
             return (
                 <div className="fixed inset-0 bg-slate-900 text-white z-50 flex flex-col p-6 overflow-y-auto">
-                    {/* NEW TOP LEFT BUTTON */}
+                    {/* TOP LEFT: SKIP TO MAIN MENU (IMPROVEMENT: Switched icon and text) */}
                     <div className="flex justify-between w-full mb-6">
                         <button 
                             onClick={() => { triggerHaptic(); onGoToMenu(); }}
                             className="p-3 bg-slate-800 rounded hover:bg-slate-700 flex items-center gap-2 font-bold"
-                            aria-label="Go to Main Menu"
+                            aria-label="Skip to Main Menu"
                         >
-                            <Icons.Home size={20} /> Go to Main Menu
+                            <Icons.SkipForward size={20} /> Skip to Main Menu
                         </button>
                     </div>
 
                     <div className="flex-1 flex flex-col justify-center space-y-8">
                         <div>
-                            <h1 className="text-4xl font-bold mb-2">{greeting}</h1>
-                            <p className="text-slate-400 text-xl">{formatDate(new Date())}</p>
+                            {/* IMPROVEMENT: Changed greeting to be more professional and clear */}
+                            <h1 className="text-4xl font-bold mb-2">Welcome!</h1>
+                            <p className="text-slate-400 text-xl font-medium" aria-label={`Today's Date is ${formatDate(new Date())}`}>
+                                Today: {formatDate(new Date())}
+                            </p>
                             
                             <div className="flex items-center gap-3 mt-1">
-                                <p className="text-blue-400 text-2xl font-extrabold uppercase tracking-wide">{routine} Focus</p>
+                                {/* IMPROVEMENT: Clearer routine focus statement */}
+                                <p className="text-blue-400 text-2xl font-extrabold uppercase tracking-wide" aria-live="polite">
+                                    Today's Strength Focus: {routine}
+                                </p>
                             </div>
                             
                             {/* CHANGE FOCUS BUTTON (Locked if done) */}
                             <div className="mt-2">
                                 {isStrengthDoneToday ? (
-                                    <span className="bg-green-800 text-green-100 border border-green-600 rounded px-3 py-1 text-sm font-bold inline-block">
-                                         Focus Complete: {routine}
+                                    <span 
+                                        className="bg-green-800 text-green-100 border border-green-600 rounded px-3 py-1 text-sm font-bold inline-block"
+                                        aria-live="polite"
+                                    >
+                                         {/* IMPROVEMENT: More concise logged status */}
+                                         {routine} Strength Focus Logged
                                     </span>
                                 ) : (
                                     <>
-                                        <label htmlFor="change-focus" className="sr-only">Change focus for today</label>
+                                        {/* IMPROVEMENT: Clearer screen reader label for dropdown */}
+                                        <label htmlFor="change-focus" className="sr-only">Change Strength Focus:</label>
                                         <select 
                                             id="change-focus"
                                             onChange={(e) => { triggerHaptic(); onChangeRoutine(e.target.value); }}
                                             value={routine}
                                             className="bg-slate-800 text-white border border-slate-600 rounded px-2 py-1 text-sm font-bold"
+                                            aria-label="Current Strength Focus"
                                         >
                                             <option value="Upper Body">Switch to Upper Body</option>
                                             <option value="Lower Body">Switch to Lower Body</option>
@@ -441,14 +454,13 @@
                                 )}
                             </div>
 
-                            <div className="mt-4 inline-block bg-slate-800 px-3 py-1 rounded-full text-sm font-bold text-yellow-400 border border-slate-700">
-                                🔥 {activeDays} Total Active Days
-                            </div>
+                            {/* Removed Active Days/Streak Feature */}
                         </div>
 
                         <div className="space-y-6">
                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                                <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">Morning Routine</h2>
+                                {/* IMPROVEMENT: Morning Session */}
+                                <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">Morning Session</h2>
                                 <div className="space-y-3 text-lg font-medium">
                                     <InteractiveRow label="HIIT Run" status={progress.hiit} onClick={() => onJumpToCardio('HIIT Run')} />
                                     <InteractiveRow label="Indoor Cycle" status={progress.cycle} onClick={() => onJumpToCardio('Indoor Cycle')} />
@@ -456,8 +468,10 @@
                             </div>
 
                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                                <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">Afternoon Routine</h2>
+                                {/* IMPROVEMENT: Afternoon Session */}
+                                <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">Afternoon Session</h2>
                                 <div className="space-y-3 text-lg font-medium">
+                                    {/* IMPROVEMENT: Use Log verbage */}
                                     <InteractiveRow label={`${routine} Focus`} status={progress.weights} onClick={() => onJumpToWeights(routine)} />
                                     <InteractiveRow label="ETP Run" status={progress.endurance} onClick={() => onJumpToCardio('ETP Run')} />
                                     <InteractiveRow label="Incline Walk" status={progress.incline} onClick={() => onJumpToCardio('Incline Walk')} />
@@ -560,20 +574,23 @@
                 <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
                         <button onClick={onBack} className="text-gray-600 font-bold flex items-center gap-1 p-2 bg-gray-200 rounded">
-                            <Icons.ArrowLeft size={20} /> Back
+                            <Icons.ArrowLeft size={20} /> Back to Menu
                         </button>
                         <h2 className="text-2xl font-bold text-blue-900">ETP Run Type</h2>
                     </div>
                     
                     <div className="space-y-4">
-                        <button onClick={() => { triggerHaptic(); onSelect('Endurance Run'); }} className="w-full p-8 bg-blue-600 text-white rounded-xl shadow-lg font-bold text-2xl flex items-center justify-between">
-                            Endurance Run <Icons.ArrowRight size={28} />
+                        <button onClick={() => { triggerHaptic(); onSelect('Endurance Run'); }} className="w-full p-8 bg-blue-600 text-white rounded-xl shadow-lg font-bold text-2xl flex flex-col items-start active:scale-[.99] transition-transform">
+                            <span className="flex items-center justify-between w-full">Endurance Run <Icons.ArrowRight size={28} /></span>
+                            <span className="text-sm font-medium text-blue-200 mt-1">Memo: Saturday, Sunday, and Monday</span>
                         </button>
-                        <button onClick={() => { triggerHaptic(); onSelect('Tempo Run'); }} className="w-full p-8 bg-indigo-600 text-white rounded-xl shadow-lg font-bold text-2xl flex items-center justify-between">
-                            Tempo Run <Icons.ArrowRight size={28} />
+                        <button onClick={() => { triggerHaptic(); onSelect('Tempo Run'); }} className="w-full p-8 bg-indigo-600 text-white rounded-xl shadow-lg font-bold text-2xl flex flex-col items-start active:scale-[.99] transition-transform">
+                            <span className="flex items-center justify-between w-full">Tempo Run <Icons.ArrowRight size={28} /></span>
+                            <span className="text-sm font-medium text-indigo-200 mt-1">Memo: Wednesday and Friday</span>
                         </button>
-                        <button onClick={() => { triggerHaptic(); onSelect('Progressive Run'); }} className="w-full p-8 bg-purple-600 text-white rounded-xl shadow-lg font-bold text-2xl flex items-center justify-between">
-                            Progressive Run <Icons.ArrowRight size={28} />
+                        <button onClick={() => { triggerHaptic(); onSelect('Progressive Run'); }} className="w-full p-8 bg-purple-600 text-white rounded-xl shadow-lg font-bold text-2xl flex flex-col items-start active:scale-[.99] transition-transform">
+                            <span className="flex items-center justify-between w-full">Progressive Run <Icons.ArrowRight size={28} /></span>
+                            <span className="text-sm font-medium text-purple-200 mt-1">Memo: Tuesday and Thursday</span>
                         </button>
                     </div>
                 </div>
@@ -632,7 +649,8 @@
                         <div><AdjustableInput id="v-height" label="Height" value={height} onChange={setHeight} step={1} unit="inches" /></div>
                     </div>
                     
-                    <div className="col-span-2"><AdjustableInput id="v-weight" label="Weight" value={weight} onChange={setWeight} step={0.1} unit="pounds" /></div>
+                    {/* Weight step set to 0.5 as requested */}
+                    <div className="col-span-2"><AdjustableInput id="v-weight" label="Weight" value={weight} onChange={setWeight} step={0.5} unit="pounds" /></div>
 
                     {/* READ-ONLY INFO CARD */}
                     <div className="bg-teal-50 p-4 rounded-xl border-4 border-teal-200 text-center">
@@ -737,6 +755,7 @@
                                 <div className="grid grid-cols-2 gap-4">
                                     <div><AdjustableInput id="b-sets" label="Sets" value={strengthForm.sets} onChange={v => setStrengthForm({...strengthForm, sets:v})} step={1} unit="" /></div>
                                     <div><AdjustableInput id="b-reps" label="Reps" value={strengthForm.reps} onChange={v => setStrengthForm({...strengthForm, reps:v})} step={1} unit="" /></div>
+                                    {/* Weights step is 1 as requested/intended */}
                                     <div className="col-span-2"><AdjustableInput id="b-weight" label="Weight" value={strengthForm.weight} onChange={v => setStrengthForm({...strengthForm, weight:v})} step={1} unit="pounds" /></div>
                                 </div>
                                 <div className="flex gap-3 pt-4"><button type="submit" className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg shadow">Save Bonus</button></div>
@@ -814,6 +833,7 @@
                             <div>
                                 <AdjustableInput id={`${exercise.id}-reps`} label="Reps" value={exercise.reps} onChange={v => onUpdate(exercise.id, 'reps', v)} step={1} unit="" />
                             </div>
+                            {/* Weight step is 1 as requested/intended for weight training */}
                             <div className="col-span-2">
                                 <AdjustableInput id={`${exercise.id}-weight`} label="Weight" value={exercise.weight} onChange={v => onUpdate(exercise.id, 'weight', v)} step={1} unit="pounds" />
                             </div>
@@ -969,7 +989,7 @@
             };
 
             if (showEtpMenu) {
-                return <ETPMenuView onBack={() => setShowEtpMenu(false)} onSelect={(act) => { setActivity(act); setShowEtpMenu(false); }} />;
+                return <ETPMenuView onBack={() => { setActivity(''); setShowEtpMenu(false); }} onSelect={(act) => { setActivity(act); setShowEtpMenu(false); }} />;
             }
 
             if (!activity) {
@@ -1099,8 +1119,11 @@
                                     <div><AdjustableInput id="c-easy" label="Easy Speed" value={formData.speedEasy} onChange={v => handleChange('speedEasy', v)} step={0.1} unit="mph" /></div>
                                     <div><AdjustableInput id="c-mod" label="Moderate Speed" value={formData.speedMod} onChange={v => handleChange('speedMod', v)} step={0.1} unit="mph" /></div>
                                     <div><AdjustableInput id="c-hard" label="Hard Speed" value={formData.speedHard} onChange={v => handleChange('speedHard', v)} step={0.1} unit="mph" /></div>
-                                    <div><AdjustableInput id="c-max" label="Maximum Speed" value={formData.speedAllOut} onChange={v => handleChange('speedAllOut', v)} step={0.1} unit="mph" /></div>
+                                    {/* All Out Speed label update */}
+                                    <div><AdjustableInput id="c-max" label="All Out Speed" value={formData.speedAllOut} onChange={v => handleChange('speedAllOut', v)} step={0.1} unit="mph" /></div>
                                 </div>
+                                {/* Incline field added for HIIT Run */}
+                                <AdjustableInput id="c-inc" label="Incline" value={formData.inclinePct} onChange={v => handleChange('inclinePct', v)} step={1} unit="%" />
                             </div>
                         )}
 
@@ -1235,7 +1258,7 @@
 
                          if (entry.metrics.intensity) text += `INTENSITY: ${entry.metrics.intensity}\n`;
                          if (entry.metrics.minIncline) text += `INCLINE RANGE: ${entry.metrics.minIncline}% - ${entry.metrics.maxIncline}%\n`;
-                         if (entry.metrics.speedEasy) text += `SPEEDS: Easy:${entry.metrics.speedEasy} / Moderate:${entry.metrics.speedMod} / Hard:${entry.metrics.speedHard} / Maximum:${entry.metrics.speedAllOut} miles per hour\n`;
+                         if (entry.metrics.speedEasy) text += `SPEEDS: Easy:${entry.metrics.speedEasy} / Moderate:${entry.metrics.speedMod} / Hard:${entry.metrics.speedHard} / All Out:${entry.metrics.speedAllOut} miles per hour\n`;
                          if (entry.metrics.notes) text += `NOTE: ${entry.metrics.notes}\n`;
                     }
                 } else if (entry.isVital) {
@@ -1267,6 +1290,150 @@
             });
             return text;
         };
+        
+        // --- CSV Generation Logic ---
+        const generateReportCSV = (entries) => {
+            // Define all possible column headers in a guaranteed order
+            const headers = [
+                "Date", "Time", "Type", "Routine", "Activity", 
+                "Exercise_Name", "Sets", "Reps", "Weight_LBS", "Duration_Mins", 
+                "Effort_RPE", "Notes", 
+                "Avg_Speed_MPH", "Intensity", 
+                "Min_Incline_PCT", "Max_Incline_PCT", "Incline_PCT",
+                "Speed_Easy_MPH", "Speed_Mod_MPH", "Speed_Hard_MPH", "Speed_AllOut_MPH",
+                "HR_Avg_BPM", "HR_Max_BPM", "Guided_Routine",
+                "TM_Warmup_Dur", "TM_Warmup_Spd", "TM_Tempo_Dur", "TM_Tempo_Spd", "TM_Cooldown_Dur", "TM_Cooldown_Spd",
+                "Prog_Base_Dur", "Prog_Base_Spd", "Prog_Build_Dur", "Prog_Build_Spd", "Prog_Finish_Dur", "Prog_Finish_Spd",
+                "V_Weight_LBS", "V_Height_Inches", "V_Age_Years", "V_BMI", "V_MHR_Fox", "V_MHR_Tanaka",
+                "V_Waist_Inches", "V_Chest_Inches", "V_Biceps_Inches", "V_Thigh_Inches"
+            ];
+
+            // Function to safely quote and escape commas/quotes for CSV standard
+            const escapeCSV = (value) => {
+                if (value === undefined || value === null) return '';
+                let str = String(value);
+                // Replace double quotes with two double quotes, then wrap the whole string in double quotes if it contains quotes or commas
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    str = str.replace(/"/g, '""');
+                    return `"${str}"`;
+                }
+                return str;
+            };
+
+            let csv = headers.join(',') + '\n';
+
+            entries.forEach(entry => {
+                // Formatting Date and Time separately for easier spreadsheet sorting/filtering
+                const dateObj = new Date(entry.date);
+                const dateStr = dateObj.toLocaleDateString();
+                const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+                
+                if (entry.isVital) {
+                    const metrics = entry.metrics || {};
+                    const bmi = calculateBMI(metrics.weight, metrics.heightSnapshot).val;
+                    const mhr = calculateMHR(metrics.ageSnapshot);
+                    
+                    const rowData = {
+                        "Date": dateStr, 
+                        "Time": timeStr, 
+                        "Type": "Vitals", 
+                        "Routine": "N/A", 
+                        "Activity": "Vitals Log", 
+                        "Exercise_Name": "", "Sets": "", "Reps": "", "Weight_LBS": "", "Duration_Mins": "", 
+                        "Effort_RPE": "", "Notes": metrics.notes || "", 
+                        "Avg_Speed_MPH": "", "Intensity": "", 
+                        "Min_Incline_PCT": "", "Max_Incline_PCT": "", "Incline_PCT": "",
+                        "Speed_Easy_MPH": "", "Speed_Mod_MPH": "", "Speed_Hard_MPH": "", "Speed_AllOut_MPH": "",
+                        "HR_Avg_BPM": "", "HR_Max_BPM": "", "Guided_Routine": "",
+                        "TM_Warmup_Dur": "", "TM_Warmup_Spd": "", "TM_Tempo_Dur": "", "TM_Tempo_Spd": "", "TM_Cooldown_Dur": "", "TM_Cooldown_Spd": "",
+                        "Prog_Base_Dur": "", "Prog_Base_Spd": "", "Prog_Build_Dur": "", "Prog_Build_Spd": "", "Prog_Finish_Dur": "", "Prog_Finish_Spd": "",
+                        "V_Weight_LBS": metrics.weight || "", 
+                        "V_Height_Inches": metrics.height || "", 
+                        "V_Age_Years": metrics.age || "", 
+                        "V_BMI": bmi, 
+                        "V_MHR_Fox": mhr.fox, 
+                        "V_MHR_Tanaka": mhr.tanaka,
+                        "V_Waist_Inches": metrics.waist || "", 
+                        "V_Chest_Inches": metrics.chest || "", 
+                        "V_Biceps_Inches": metrics.biceps || "", 
+                        "V_Thigh_Inches": metrics.thigh || ""
+                    };
+                    
+                    csv += headers.map(h => escapeCSV(rowData[h])).join(',') + '\n';
+                
+                } else if (entry.isCardio) {
+                    const metrics = entry.metrics || {};
+                    
+                    const rowData = {
+                        "Date": dateStr, 
+                        "Time": timeStr, 
+                        "Type": "Cardio", 
+                        "Routine": entry.routine || "N/A", 
+                        "Activity": entry.activity || "", 
+                        "Exercise_Name": "", "Sets": "", "Reps": "", "Weight_LBS": "", 
+                        "Duration_Mins": metrics.duration || "", 
+                        "Effort_RPE": entry.overallEffort || metrics.effort || "", 
+                        "Notes": metrics.notes || "", 
+                        "Avg_Speed_MPH": metrics.avgSpeed || "", 
+                        "Intensity": metrics.intensity || "", 
+                        "Min_Incline_PCT": metrics.minIncline || "", 
+                        "Max_Incline_PCT": metrics.maxIncline || "", 
+                        "Incline_PCT": metrics.inclinePct || "",
+                        "Speed_Easy_MPH": metrics.speedEasy || "", 
+                        "Speed_Mod_MPH": metrics.speedMod || "", 
+                        "Speed_Hard_MPH": metrics.speedHard || "", 
+                        "Speed_AllOut_MPH": metrics.speedAllOut || "",
+                        "HR_Avg_BPM": metrics.avgHR || "", 
+                        "HR_Max_BPM": metrics.maxHR || "", 
+                        "Guided_Routine": metrics.isGuided ? "TRUE" : "FALSE",
+                        "TM_Warmup_Dur": metrics.warmupDur || "", "TM_Warmup_Spd": metrics.warmupSpd || "", 
+                        "TM_Tempo_Dur": metrics.tempoDur || "", "TM_Tempo_Spd": metrics.tempoSpd || "", 
+                        "TM_Cooldown_Dur": metrics.cooldownDur || "", "TM_Cooldown_Spd": metrics.cooldownSpd || "",
+                        "Prog_Base_Dur": metrics.progBaseDur || "", "Prog_Base_Spd": metrics.progBaseSpd || "", 
+                        "Prog_Build_Dur": metrics.progBuildDur || "", "Prog_Build_Spd": metrics.progBuildSpd || "", 
+                        "Prog_Finish_Dur": metrics.progFinishDur || "", "Prog_Finish_Spd": metrics.progFinishSpd || "",
+                        "V_Weight_LBS": "", "V_Height_Inches": "", "V_Age_Years": "", "V_BMI": "", "V_MHR_Fox": "", "V_MHR_Tanaka": "",
+                        "V_Waist_Inches": "", "V_Chest_Inches": "", "V_Biceps_Inches": "", "V_Thigh_Inches": ""
+                    };
+                    
+                    csv += headers.map(h => escapeCSV(rowData[h])).join(',') + '\n';
+
+                } else {
+                    const baseRowData = {
+                        "Date": dateStr, 
+                        "Time": timeStr, 
+                        "Type": "Strength", 
+                        "Routine": entry.routine || "N/A", 
+                        "Activity": "Weight Training", 
+                        "Duration_Mins": "", 
+                        "Effort_RPE": entry.overallEffort || "", 
+                        "Notes": "", 
+                        "Avg_Speed_MPH": "", "Intensity": "", 
+                        "Min_Incline_PCT": "", "Max_Incline_PCT": "", "Incline_PCT": "",
+                        "Speed_Easy_MPH": "", "Speed_Mod_MPH": "", "Speed_Hard_MPH": "", "Speed_AllOut_MPH": "",
+                        "HR_Avg_BPM": "", "HR_Max_BPM": "", "Guided_Routine": "",
+                        "TM_Warmup_Dur": "", "TM_Warmup_Spd": "", "TM_Tempo_Dur": "", "TM_Tempo_Spd": "", "TM_Cooldown_Dur": "", "TM_Cooldown_Spd": "",
+                        "Prog_Base_Dur": "", "Prog_Base_Spd": "", "Prog_Build_Dur": "", "Prog_Build_Spd": "", "Prog_Finish_Dur": "", "Prog_Finish_Spd": "",
+                        "V_Weight_LBS": "", "V_Height_Inches": "", "V_Age_Years": "", "V_BMI": "", "V_MHR_Fox": "", "V_MHR_Tanaka": "",
+                        "V_Waist_Inches": "", "V_Chest_Inches": "", "V_Biceps_Inches": "", "V_Thigh_Inches": ""
+                    };
+                    
+                    (entry.exercises || []).forEach(ex => {
+                        const rowData = {
+                            ...baseRowData,
+                            "Exercise_Name": ex.name || "", 
+                            "Sets": ex.sets || "", 
+                            "Reps": ex.reps || "", 
+                            "Weight_LBS": ex.weight || "",
+                            "Duration_Mins": ex.time ? (parseFloat(ex.time) / 60).toFixed(2) : "", // Convert seconds to minutes for CSV
+                            "Notes": ex.notes || "",
+                        };
+                        csv += headers.map(h => escapeCSV(rowData[h])).join(',') + '\n';
+                    });
+                }
+            });
+            return csv;
+        };
 
 
         // --- Reports, AddForm, and Main App ---
@@ -1274,6 +1441,16 @@
             const [filter, setFilter] = useState('week');
             const [reportText, setReportText] = useState('');
             const [filteredEntries, setFilteredEntries] = useState([]);
+            
+            // Generate Filename Utility
+            const generateFilename = (ext = 'txt') => {
+                const now = new Date();
+                const pad = (n) => n.toString().padStart(2, '0');
+                const timestamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+                return `EasyLog_Report_${filter}_${timestamp}.${ext}`;
+            };
+            
+            // Core filtering logic
             useEffect(() => {
                 const now = new Date();
                 const filtered = history.filter(entry => {
@@ -1287,26 +1464,37 @@
                 setFilteredEntries(filtered);
                 setReportText(generateReportText(filtered, filter));
             }, [filter, history]);
-            // NOTE: Alert is replaced by a custom message box in production, but keeping 'alert' logic for sandbox environment simplicity as per standard instructions.
+            
             const handleCopy = () => { triggerHaptic(); const ta = document.createElement("textarea"); ta.value = reportText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert("Report copied!"); };
-            const handleDownload = () => { 
+            
+            const handleDownloadTXT = () => { 
                 triggerHaptic(); 
                 const blob = new Blob([reportText], { type: 'text/plain' }); 
                 const url = URL.createObjectURL(blob); 
                 const a = document.createElement('a'); 
-                
-                // Fix filename timestamp using local time
-                const now = new Date();
-                const pad = (n) => n.toString().padStart(2, '0');
-                const timestamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
-                                 
                 a.href = url; 
-                a.download = `EasyLog_Report_${filter}_${timestamp}.txt`; 
+                a.download = generateFilename('txt'); 
                 document.body.appendChild(a); 
                 a.click(); 
                 document.body.removeChild(a); 
                 URL.revokeObjectURL(url); 
             };
+            
+            // New CSV export handler
+            const handleDownloadCSV = () => { 
+                triggerHaptic(); 
+                const csvData = generateReportCSV(filteredEntries);
+                const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' }); 
+                const url = URL.createObjectURL(blob); 
+                const a = document.createElement('a'); 
+                a.href = url; 
+                a.download = generateFilename('csv'); 
+                document.body.appendChild(a); 
+                a.click(); 
+                document.body.removeChild(a); 
+                URL.revokeObjectURL(url); 
+            };
+
             return (
                 <div className="space-y-6">
                     <div className="bg-white p-4 rounded-lg shadow text-center">
@@ -1314,37 +1502,26 @@
                     </div>
                     
                     <div className="bg-white p-4 rounded-lg shadow"><div className="grid grid-cols-5 gap-1">{['day', 'week', 'month', 'year', 'all'].map(f => (<button key={f} onClick={() => { triggerHaptic(); setFilter(f); }} className={`py-3 px-1 rounded text-sm font-bold uppercase ${filter === f ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}>{f}</button>))}</div></div>
-                    <div className="flex gap-3"><button onClick={handleCopy} className="flex-1 py-4 bg-indigo-100 text-indigo-900 border-2 border-indigo-300 rounded-lg font-bold flex items-center justify-center gap-2"><Icons.Clipboard size={24} /> Copy for AI</button><button onClick={handleDownload} className="flex-1 py-4 bg-green-100 text-green-900 border-2 border-green-300 rounded-lg font-bold flex items-center justify-center gap-2"><Icons.FileText size={24} /> Save File</button></div>
+                    
+                    {/* Updated button row for CSV export (3 buttons now) */}
+                    <div className="flex gap-2">
+                        <button onClick={handleCopy} className="flex-1 py-4 bg-indigo-100 text-indigo-900 border-2 border-indigo-300 rounded-lg font-bold flex items-center justify-center gap-2 text-sm">
+                            <Icons.Clipboard size={20} /> Copy for AI
+                        </button>
+                        <button onClick={handleDownloadTXT} className="flex-1 py-4 bg-green-100 text-green-900 border-2 border-green-300 rounded-lg font-bold flex items-center justify-center gap-2 text-sm">
+                            <Icons.FileText size={20} /> Save TXT
+                        </button>
+                        <button onClick={handleDownloadCSV} className="flex-1 py-4 bg-yellow-100 text-yellow-900 border-2 border-yellow-300 rounded-lg font-bold flex items-center justify-center gap-2 text-sm">
+                            <Icons.Download size={20} /> Export as CSV
+                        </button>
+                    </div>
+                    
                     <div className="space-y-4">
                         <h3 className="text-lg font-bold text-gray-700 border-b pb-2">{filter === 'all' ? 'All Time' : `This ${filter.charAt(0).toUpperCase() + filter.slice(1)}`} ({filteredEntries.length} entries)</h3>
                         {filteredEntries.length === 0 && <p className="text-gray-400 italic">No entries found.</p>}
-                        {filteredEntries.map((entry) => (
-                            <div key={entry.id} className="bg-white p-4 rounded shadow border-l-4 border-gray-400">
-                                <div className="font-bold text-gray-900 flex justify-between"><span>{new Date(entry.date).toLocaleDateString()}</span><span className="text-sm text-gray-500">{new Date(entry.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>
-                                {entry.isCardio ? (
-                                    entry.metrics ? (
-                                        <div className="mt-2">
-                                            <span className="text-indigo-700 font-bold uppercase text-sm tracking-wide">Cardio: {entry.activity}</span>
-                                            <p className="text-gray-800 ml-2">Duration: {entry.metrics.duration} minutes</p>
-                                            {entry.metrics.effort && <p className="text-gray-600 ml-2 text-sm font-bold">Effort: {entry.metrics.effort}/10</p>}
-                                        </div>
-                                    ) : null
-                                ) : entry.isVital ? (
-                                    <div className="mt-2">
-                                        <span className="text-teal-700 font-bold uppercase text-sm tracking-wide">Vitals</span>
-                                        <p className="text-gray-800 ml-2">Weight: {entry.metrics.weight} pounds (BMI: {calculateBMI(entry.metrics.weight, entry.metrics.heightSnapshot).val})</p>
-                                    </div>
-                                ) : (
-                                    <div className="mt-2">
-                                        <div className="flex justify-between">
-                                            <span className="text-blue-700 font-bold uppercase text-sm tracking-wide">Weights: {entry.routine}</span>
-                                            {entry.overallEffort && <span className="text-gray-600 text-xs font-bold bg-gray-200 px-2 rounded">RPE {entry.overallEffort}</span>}
-                                        </div>
-                                    {entry.exercises && <ul className="ml-2 mt-1 space-y-1 text-sm text-gray-800">{entry.exercises.filter(ex => ex.sets || ex.weight).map((ex, i) => (<li key={i}><strong>{ex.name}:</strong> {ex.weight} pounds ({ex.sets}x{ex.reps})</li>))}</ul>}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                        <div className="bg-white p-4 rounded-lg shadow-inner text-xs font-mono whitespace-pre-wrap max-h-[50vh] overflow-y-auto border border-gray-300" aria-label="Detailed Workout Report Preview">
+                            {reportText}
+                        </div>
                     </div>
                 </div>
             );
@@ -1675,14 +1852,6 @@
                 return `${days} days ago`;
             };
             
-            const handleDailyStatusClick = () => {
-                 triggerHaptic(); 
-                 setCurrentDate(new Date()); 
-                 const savedHistory = localStorage.getItem('workout_history');
-                 if (savedHistory) setHistory(JSON.parse(savedHistory));
-                 setShowSplash(true);
-            };
-
             const availableExercises = [...(DEFAULT_DB[activeRoutine] || []), ...(customDb[activeRoutine] || [])].sort();
             
             // Helper for Database Status
@@ -1721,9 +1890,11 @@
                     <div role="status" aria-live="polite" className="sr-only" ref={announcementRef}>{announcement}</div>
                     <header className="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-20">
                         <div className="max-w-3xl mx-auto flex justify-between items-center">
-                            {/* TOP LEFT: MENU/BACK (Always shows "Main Menu" if not on main menu) */}
+                            
+                            {/* TOP LEFT NAVIGATION LOGIC (Back to Progress Page) */}
                             <div className="flex gap-2">
-                                {view !== 'menu' && (
+                                {view !== 'menu' ? (
+                                    // Back to Menu button for all non-menu views
                                     <button 
                                         ref={headerRef} // FOCUS TARGET
                                         onClick={() => {triggerHaptic(); setView('menu');}} 
@@ -1732,9 +1903,16 @@
                                     >
                                         <Icons.ArrowLeft size={20} /> Main Menu
                                     </button>
-                                )}
-                                {view === 'menu' && (
-                                    <h1 ref={headerRef} tabIndex="-1" className="text-xl font-extrabold flex items-center gap-2 outline-none focus:ring-2 focus:ring-blue-400 rounded px-1">Easy Log v25.8</h1>
+                                ) : (
+                                    // Back to Progress Page (Splash) button when on the main menu
+                                    <button
+                                        ref={headerRef}
+                                        onClick={() => { triggerHaptic(); setShowSplash(true); }} // Back to Progress Page (Splash)
+                                        className="p-3 bg-slate-800 rounded hover:bg-slate-700 flex items-center gap-2 font-bold"
+                                        aria-label="Back to Progress Page"
+                                    >
+                                        <Icons.ArrowLeft size={20} /> Back to Progress Page
+                                    </button>
                                 )}
                             </div>
 
@@ -1762,7 +1940,7 @@
                                 <button onClick={() => {triggerHaptic(); setView('vitals');}} className="w-full p-6 bg-teal-600 text-white rounded-xl shadow border border-teal-500 hover:bg-teal-700 text-left flex items-center gap-4"><Icons.Heart size={32} /><span className="text-2xl font-bold">Vitals & BMI</span></button>
 
                                 <button onClick={() => {triggerHaptic(); setView('reports');}} className="w-full p-6 bg-white text-slate-800 rounded-xl shadow border border-gray-200 hover:bg-gray-50 text-left flex items-center gap-4"><Icons.List size={32} className="text-slate-500" /><span className="text-xl font-bold">Reports</span></button>
-                                <button onClick={handleDailyStatusClick} className="w-full p-4 bg-gray-200 text-gray-800 rounded-lg font-bold text-center border border-gray-300 hover:bg-gray-300">View Daily Status</button>
+                                {/* Removed redundant progress check link */}
                             </div>
                         )}
                         {view === 'bonus' && <BonusView onBack={() => {triggerHaptic(); setView('menu');}} onSaveBonus={handleBonusSave} availableExercises={masterExerciseList} history={history} onStartLucky={() => setView('lucky')} />}
@@ -1926,5 +2104,3 @@
     </script>
 </body>
 </html>
-
-
