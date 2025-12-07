@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Easy Log v25.20</title>
+    <title>Easy Log v25.12</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -227,49 +227,15 @@
             return `${days} days ago`;
         };
 
-        // --- STATIC INPUT COMPONENT (New Component) ---
-        function StaticInput({ id, label, value, onChange, unit="", inputMode="numeric" }) {
-            
-            const displayValue = value || '';
-            let ariaValueText = `${displayValue}`;
-            if (unit) ariaValueText += ` ${unit}`;
-
-            return (
-                <div className="mb-4">
-                     <label htmlFor={id} className="block text-sm font-bold text-gray-800 mb-1 capitalize">{label}</label>
-                    <input 
-                        id={id} 
-                        type="text" 
-                        inputMode={inputMode} // Forces numerical/decimal keyboard
-                        value={value} 
-                        onChange={(e) => onChange(e.target.value)}
-                        className="w-full p-4 text-xl border border-gray-400 rounded bg-white"
-                        aria-label={label}
-                        aria-valuenow={parseFloat(value) || 0}
-                        aria-valuetext={ariaValueText}
-                        placeholder={inputMode === 'numeric' ? '0' : '0.0'}
-                    />
-                </div>
-            );
-        }
-
-        // --- ADJUSTABLE INPUT COMPONENT (Adjusted for Weight-only Swipe) ---
+        // --- ADJUSTABLE INPUT COMPONENT (Fixed for VoiceOver) ---
         function AdjustableInput({ id, label, value, onChange, step, unit, min=0, max=9999 }) {
             const [isManual, setIsManual] = useState(false);
             const inputRef = useRef(null);
             const spinRef = useRef(null);
 
             const currentVal = value === '' ? min : parseFloat(value);
-            
-            // Determine display value based on presence of step/unit
-            const isInteger = (step === 1 && unit === '');
-            const displayValue = isInteger ? (value ? parseInt(value) : min) : (value || min);
-            
-            
-            // IMPROVEMENT: Ensure aria-valuetext is clean
-            let ariaValueText = `${displayValue}`;
-            if (unit) ariaValueText += ` ${unit}`;
-
+            // This is what VoiceOver will announce when values change
+            const ariaValueText = `${value || min} ${unit}`;
 
             const adjust = (direction) => {
                 triggerHaptic();
@@ -285,10 +251,9 @@
                 if (direction === 'up') newVal = (cleanCurrentVal + cleanStep) / factor;
                 else newVal = (cleanCurrentVal - cleanStep) / factor;
                 
-                // Determine formatting based on step size
-                const decimalPlaces = step < 1 ? 1 : 0;
-                const formattedNewVal = newVal.toFixed(decimalPlaces);
-                
+                // Ensure correct formatting for display (e.g., 10.0 instead of 10)
+                const formattedNewVal = step < 1 ? newVal.toFixed(1) : newVal.toString();
+
                 if (newVal < min) newVal = min;
                 if (newVal > max) newVal = max;
                 
@@ -312,7 +277,7 @@
                          <label htmlFor={id} className="block text-sm font-bold text-gray-800 mb-1 capitalize" aria-hidden="true">{label}</label>
                         <div className="flex gap-2">
                             <input 
-                                ref={inputRef} id={id} type="text" inputMode={step < 1 ? "decimal" : "numeric"}
+                                ref={inputRef} id={id} type="text" inputMode="decimal"
                                 value={value} onChange={(e) => onChange(e.target.value)}
                                 onBlur={() => setIsManual(false)}
                                 className="w-full p-4 text-xl border-2 border-blue-500 rounded bg-white"
@@ -342,13 +307,14 @@
                         className="adjustable-input w-full p-4 text-xl border border-gray-400 rounded bg-white flex justify-between items-center cursor-pointer active:bg-gray-100"
                     >
                         {/* Visual value for sighted users */}
-                        <span className="font-bold text-2xl">{displayValue} <span className="text-sm text-gray-500">{unit}</span></span>
+                        <span className="font-bold text-2xl">{value || min} <span className="text-sm text-gray-500">{unit}</span></span>
                         {/* Swipe instructions hidden from VoiceOver */}
                         <span aria-hidden="true" className="text-gray-500 text-sm font-medium uppercase">Swipe Up/Down</span>
                     </div>
                 </div>
             );
         }
+
 
         // --- SPLASH SCREEN COMPONENT ---
         function SplashScreen({ onGoToMenu, routine, history, currentSession, onBonus, onJumpToCardio, onJumpToWeights, onChangeRoutine, onVitals }) {
@@ -401,42 +367,15 @@
                 return <span aria-label="Not started"><Icons.Circle className="text-gray-300" /></span>;
             };
             
-            // ACCESSIBILITY FIX: Explicitly append status to ARIA label
-            const getButtonAriaLabel = (label, status) => {
-                let baseLabel;
-                
-                // 1. Determine the Base Action Label
-                if (label.includes('Focus')) {
-                    // Specific handling for Strength Focus button
-                    baseLabel = `Log Today's ${label}`;
-                } else {
-                    baseLabel = `Log ${label}`;
-                }
-
-                // 2. Determine the Status Suffix
-                if (status === 'done') {
-                    // When done, announce the name and status only
-                    return `${label}, Completed`;
-                }
-                if (status === 'progress') {
-                    return `${baseLabel}, In Progress. Tap to continue.`;
-                }
-                // 3. If status is 'todo', explicitly announce 'Not Completed'
-                if (status === 'todo') { 
-                    return `${baseLabel}, Not Completed`;
-                }
-                
-                return baseLabel; // Fallback
-            };
-            
-            const InteractiveRow = ({ label, status, onClick }) => (
+            const InteractiveRow = ({ label, status, onClick, activityName }) => (
                 <button 
                     onClick={() => { triggerHaptic(); onClick(); }} 
                     className="w-full flex items-center justify-between p-2 rounded hover:bg-slate-700 text-left active:bg-slate-600 transition-colors"
-                    aria-label={getButtonAriaLabel(label, status)} 
+                    aria-label={`Log ${label}`} // IMPROVEMENT: Explicit action verb
                 >
                     <span className="flex items-center gap-2 text-base">
                         {label} 
+                        {/* IMPROVEMENT: Removed redundant visual arrow hint */}
                     </span>
                     <StatusIcon status={status} />
                 </button>
@@ -460,7 +399,7 @@
 
             return (
                 <div className="fixed inset-0 bg-slate-900 text-white z-50 flex flex-col p-6 overflow-y-auto">
-                    {/* TOP LEFT: SKIP TO MAIN MENU */}
+                    {/* TOP LEFT: SKIP TO MAIN MENU (IMPROVEMENT: Switched icon and text) */}
                     <div className="flex justify-between w-full mb-6">
                         <button 
                             onClick={() => { triggerHaptic(); onGoToMenu(); }}
@@ -486,8 +425,8 @@
                                 </p>
                             </div>
                             
-                            {/* REINSTATED LOCATION: CHANGE FOCUS BUTTON */}
-                             <div className="mt-2">
+                            {/* CHANGE FOCUS BUTTON (Locked if done) */}
+                            <div className="mt-2">
                                 {isStrengthDoneToday ? (
                                     <span 
                                         className="bg-green-800 text-green-100 border border-green-600 rounded px-3 py-1 text-sm font-bold inline-block"
@@ -504,12 +443,12 @@
                                             id="change-focus"
                                             onChange={(e) => { triggerHaptic(); onChangeRoutine(e.target.value); }}
                                             value={routine}
-                                            className="bg-slate-800 text-white border border-slate-600 rounded px-2 py-1 text-sm font-bold inline-block w-auto"
-                                            aria-label="Select a different Strength Focus routine for today"
+                                            className="bg-slate-800 text-white border border-slate-600 rounded px-2 py-1 text-sm font-bold"
+                                            aria-label="Current Strength Focus"
                                         >
-                                            <option value="Upper Body">Upper Body</option>
-                                            <option value="Lower Body">Lower Body</option>
-                                            <option value="Core">Core</option>
+                                            <option value="Upper Body">Switch to Upper Body</option>
+                                            <option value="Lower Body">Switch to Lower Body</option>
+                                            <option value="Core">Switch to Core</option>
                                         </select>
                                     </>
                                 )}
@@ -520,7 +459,7 @@
 
                         <div className="space-y-6">
                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                                {/* REQUESTED HEADER: Morning Session */}
+                                {/* IMPROVEMENT: Morning Session */}
                                 <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">Morning Session</h2>
                                 <div className="space-y-3 text-lg font-medium">
                                     <InteractiveRow label="HIIT Run" status={progress.hiit} onClick={() => onJumpToCardio('HIIT Run')} />
@@ -529,7 +468,7 @@
                             </div>
 
                             <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                                {/* REQUESTED HEADER: Afternoon Session */}
+                                {/* IMPROVEMENT: Afternoon Session */}
                                 <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">Afternoon Session</h2>
                                 <div className="space-y-3 text-lg font-medium">
                                     {/* IMPROVEMENT: Use Log verbage */}
@@ -660,60 +599,42 @@
 
         // --- VITALS VIEW (UPDATED - READ ONLY FIELDS) ---
         function VitalsView({ history, onSave }) {
-            const [vitals, setVitals] = useState({
-                age: '',
-                height: '',
-                weight: '',
-                waist: '',
-                chest: '',
-                biceps: '',
-                thigh: '',
-                notes: ''
-            });
+            const [age, setAge] = useState('');
+            const [height, setHeight] = useState('');
+            const [weight, setWeight] = useState('');
+            const [waist, setWaist] = useState('');
+            const [chest, setChest] = useState('');
+            const [biceps, setBiceps] = useState('');
+            const [thigh, setThigh] = useState('');
+            const [notes, setNotes] = useState('');
             
-            const handleChange = (field, value) => {
-                 // Clean value to ensure it's either an empty string or a valid number string
-                let cleanedValue = value.replace(/[^\d.]/g, '');
-                
-                if (field === 'age' || field === 'height') {
-                    // Only allow integers for age and height (inches/years)
-                    cleanedValue = cleanedValue.split('.')[0] || '';
-                }
-
-                setVitals(prev => ({
-                    ...prev,
-                    [field]: cleanedValue
-                }));
-            };
+            // Calculate derived values live
+            const bmiData = calculateBMI(weight, height);
+            const mhrData = calculateMHR(age);
 
             // Pre-fill history logic
             useEffect(() => {
                 const lastVital = history.slice().reverse().find(h => h.isVital);
                 if (lastVital && lastVital.metrics) {
-                    setVitals(prev => ({
-                        ...prev,
-                        age: lastVital.metrics.age || '',
-                        height: lastVital.metrics.height || '',
-                        weight: lastVital.metrics.weight || '',
-                        waist: lastVital.metrics.waist || '',
-                        chest: lastVital.metrics.chest || '',
-                        biceps: lastVital.metrics.biceps || '',
-                        thigh: lastVital.metrics.thigh || '',
-                    }));
+                    const m = lastVital.metrics;
+                    if (m.age) setAge(m.age);
+                    if (m.height) setHeight(m.height);
+                    if (m.weight) setWeight(m.weight);
+                    if (m.waist) setWaist(m.waist);
+                    if (m.chest) setChest(m.chest);
+                    if (m.biceps) setBiceps(m.biceps);
+                    if (m.thigh) setThigh(m.thigh);
                 }
             }, [history]);
-
-            const bmiData = calculateBMI(vitals.weight, vitals.height);
-            const mhrData = calculateMHR(vitals.age);
 
             const handleSave = () => {
                 triggerHaptic();
                 playSound('success');
                 onSave({ 
-                    ...vitals,
-                    // Pass snapshots of key data used for BMI calculation in case the user deletes them later
-                    heightSnapshot: vitals.height,
-                    ageSnapshot: vitals.age
+                    age, height, weight, waist, chest, biceps, thigh, notes,
+                    // Legacy support for report generator
+                    heightSnapshot: height,
+                    ageSnapshot: age
                 });
             };
 
@@ -724,16 +645,12 @@
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        {/* AGE: STATIC INPUT */}
-                        <div><StaticInput id="v-age" label="Age" value={vitals.age} onChange={v => handleChange('age', v)} inputMode="numeric" unit="years" /></div>
-                        {/* HEIGHT: STATIC INPUT */}
-                        <div><StaticInput id="v-height" label="Height" value={vitals.height} onChange={v => handleChange('height', v)} inputMode="numeric" unit="inches" /></div>
+                        <div><AdjustableInput id="v-age" label="Age" value={age} onChange={setAge} step={1} unit="years" /></div>
+                        <div><AdjustableInput id="v-height" label="Height" value={height} onChange={setHeight} step={1} unit="inches" /></div>
                     </div>
                     
-                    {/* WEIGHT: ADJUSTABLE INPUT (Only field with swipe/spin) */}
-                    <div className="col-span-2">
-                        <AdjustableInput id="v-weight" label="Weight" value={vitals.weight} onChange={v => handleChange('weight', v)} step={0.5} unit="pounds" />
-                    </div>
+                    {/* Weight step set to 0.5 as requested */}
+                    <div className="col-span-2"><AdjustableInput id="v-weight" label="Weight" value={weight} onChange={setWeight} step={0.5} unit="pounds" /></div>
 
                     {/* READ-ONLY INFO CARD */}
                     <div className="bg-teal-50 p-4 rounded-xl border-4 border-teal-200 text-center">
@@ -756,22 +673,15 @@
                     <div className="bg-white p-6 rounded-lg shadow-xl space-y-6">
                         <h3 className="font-bold text-gray-500 uppercase text-sm">Body Measurements (inches)</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            {/* MEASUREMENTS: STATIC INPUTS */}
-                            <div className="col-span-2"><StaticInput id="v-waist" label="Waist Circumference" value={vitals.waist} onChange={v => handleChange('waist', v)} inputMode="decimal" unit="inches" /></div>
-                            <div><StaticInput id="v-chest" label="Chest Circumference" value={vitals.chest} onChange={v => handleChange('chest', v)} inputMode="decimal" unit="inches" /></div>
-                            <div><StaticInput id="v-biceps" label="Biceps Circumference" value={vitals.biceps} onChange={v => handleChange('biceps', v)} inputMode="decimal" unit="inches" /></div>
-                            <div className="col-span-2"><StaticInput id="v-thigh" label="Thigh Circumference" value={vitals.thigh} onChange={v => handleChange('thigh', v)} inputMode="decimal" unit="inches" /></div>
+                            <div className="col-span-2"><AdjustableInput id="v-waist" label="Waist Circumference" value={waist} onChange={setWaist} step={0.25} unit="inches" /></div>
+                            <div><AdjustableInput id="v-chest" label="Chest Circumference" value={chest} onChange={setChest} step={0.25} unit="inches" /></div>
+                            <div><AdjustableInput id="v-biceps" label="Biceps Circumference" value={biceps} onChange={setBiceps} step={0.25} unit="inches" /></div>
+                            <div className="col-span-2"><AdjustableInput id="v-thigh" label="Thigh Circumference" value={thigh} onChange={setThigh} step={0.25} unit="inches" /></div>
                         </div>
 
                         <div>
                             <label className="block text-sm font-bold text-gray-800 mb-1">Notes</label>
-                            <textarea 
-                                value={vitals.notes} 
-                                onChange={e => handleChange('notes', e.target.value)} 
-                                className="w-full p-3 text-lg border border-gray-400 rounded" 
-                                rows="2"
-                                aria-label="Notes on Vitals"
-                            />
+                            <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded" rows="2"></textarea>
                         </div>
 
                         <button onClick={handleSave} className="w-full py-5 bg-teal-600 text-white font-bold text-xl rounded-lg shadow-lg hover:bg-teal-500">
@@ -930,7 +840,11 @@
                             
                             {/* SMART TIME TOGGLE */}
                              <div className="col-span-2">
-                                <AdjustableInput id={`${exercise.id}-time`} label="Time" value={exercise.time} onChange={v => onUpdate(exercise.id, 'time', v)} step={1} unit="seconds" />
+                                {showTime ? (
+                                    <AdjustableInput id={`${exercise.id}-time`} label="Time" value={exercise.time} onChange={v => onUpdate(exercise.id, 'time', v)} step={1} unit="seconds" />
+                                ) : (
+                                    <button onClick={() => setShowTime(true)} className="text-blue-600 font-bold text-sm underline py-2">Add Duration (+)</button>
+                                )}
                             </div>
                         </div>
 
@@ -1196,7 +1110,7 @@
                             </div>
                         )}
                         
-                        {/* HIIT Run Specific Fields (Uses Adjustable Input for swiping speed/duration) */}
+                        {/* HIIT Run Specific Fields */}
                         {activity === 'HIIT Run' && (
                             <div className="space-y-4" ref={durationRef} tabIndex="-1">
                                 <AdjustableInput id="c-duration" label="Total Duration" value={formData.duration} onChange={v => handleChange('duration', v)} step={1} unit="minutes" />
@@ -1213,7 +1127,7 @@
                             </div>
                         )}
 
-                        {/* Indoor Cycle Specific Fields (Uses Adjustable Input for swiping duration) */}
+                        {/* Indoor Cycle Specific Fields */}
                         {activity === 'Indoor Cycle' && (
                             <div className="space-y-4" ref={durationRef} tabIndex="-1">
                                 <AdjustableInput id="c-duration" label="Total Duration" value={formData.duration} onChange={v => handleChange('duration', v)} step={1} unit="minutes" />
@@ -1232,7 +1146,7 @@
                             </div>
                         )}
 
-                        {/* Endurance Run Specific Fields (Uses Adjustable Input for swiping duration/speed) */}
+                        {/* Endurance Run Specific Fields */}
                         {activity === 'Endurance Run' && (
                             <div className="space-y-4" ref={durationRef} tabIndex="-1">
                                 <AdjustableInput id="c-duration" label="Total Duration" value={formData.duration} onChange={v => handleChange('duration', v)} step={1} unit="minutes" />
@@ -1241,7 +1155,7 @@
                             </div>
                         )}
                                 
-                        /* Incline Walk Specific Fields (Uses Adjustable Input for swiping duration/speed/incline) */
+                        {/* Incline Walk Specific Fields */}
                         {activity === 'Incline Walk' && (
                             <div className="space-y-4" ref={durationRef} tabIndex="-1">
                                 <AdjustableInput id="c-duration" label="Total Duration" value={formData.duration} onChange={v => handleChange('duration', v)} step={1} unit="minutes" />
@@ -1254,13 +1168,12 @@
                         )}
                     </section>
                     
-                    {/* SECTION 2: HEART RATE STATS (Now uses STATIC INPUTS) */}
+                    {/* SECTION 2: HEART RATE STATS */}
                     <section className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
                         <h3 className="font-bold text-gray-700 uppercase text-lg border-b pb-2">Heart Rate Statistics</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            {/* CHANGED: Switched to StaticInput for direct numerical entry */}
-                            <StaticInput id="std-hr-avg" label="Average Heart Rate" value={formData.avgHR} onChange={v => handleChange('avgHR', v)} inputMode="numeric" unit="beats per minute" />
-                            <StaticInput id="std-hr-max" label="Maximum Heart Rate" value={formData.maxHR} onChange={v => handleChange('maxHR', v)} inputMode="numeric" unit="beats per minute" />
+                            <AdjustableInput id="std-hr-avg" label="Average Heart Rate" value={formData.avgHR} onChange={v => handleChange('avgHR', v)} step={1} unit="beats per minute" />
+                            <AdjustableInput id="std-hr-max" label="Maximum Heart Rate" value={formData.maxHR} onChange={v => handleChange('maxHR', v)} step={1} unit="beats per minute" />
                         </div>
                     </section>
 
@@ -1283,7 +1196,7 @@
 
                         <div>
                             <label htmlFor="cardio-notes" className="block text-sm font-bold text-gray-800 mb-1">Notes</label>
-                            <textarea id="cardio-notes" aria-label="Notes on Cardio" value={formData.notes} onChange={e => handleChange('notes', e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded bg-white" placeholder="" rows="3" />
+                            <textarea id="cardio-notes" aria-label="Cardio notes" value={formData.notes} onChange={e => handleChange('notes', e.target.value)} className="w-full p-3 text-lg border border-gray-400 rounded bg-white" placeholder="" rows="3" />
                         </div>
                         
                         <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
@@ -1444,6 +1357,43 @@
                         "V_Chest_Inches": metrics.chest || "", 
                         "V_Biceps_Inches": metrics.biceps || "", 
                         "V_Thigh_Inches": metrics.thigh || ""
+                    };
+                    
+                    csv += headers.map(h => escapeCSV(rowData[h])).join(',') + '\n';
+                
+                } else if (entry.isCardio) {
+                    const metrics = entry.metrics || {};
+                    
+                    const rowData = {
+                        "Date": dateStr, 
+                        "Time": timeStr, 
+                        "Type": "Cardio", 
+                        "Routine": entry.routine || "N/A", 
+                        "Activity": entry.activity || "", 
+                        "Exercise_Name": "", "Sets": "", "Reps": "", "Weight_LBS": "", 
+                        "Duration_Mins": metrics.duration || "", 
+                        "Effort_RPE": entry.overallEffort || metrics.effort || "", 
+                        "Notes": metrics.notes || "", 
+                        "Avg_Speed_MPH": metrics.avgSpeed || "", 
+                        "Intensity": metrics.intensity || "", 
+                        "Min_Incline_PCT": metrics.minIncline || "", 
+                        "Max_Incline_PCT": metrics.maxIncline || "", 
+                        "Incline_PCT": metrics.inclinePct || "",
+                        "Speed_Easy_MPH": metrics.speedEasy || "", 
+                        "Speed_Mod_MPH": metrics.speedMod || "", 
+                        "Speed_Hard_MPH": metrics.speedHard || "", 
+                        "Speed_AllOut_MPH": metrics.speedAllOut || "",
+                        "HR_Avg_BPM": metrics.avgHR || "", 
+                        "HR_Max_BPM": metrics.maxHR || "", 
+                        "Guided_Routine": metrics.isGuided ? "TRUE" : "FALSE",
+                        "TM_Warmup_Dur": metrics.warmupDur || "", "TM_Warmup_Spd": metrics.warmupSpd || "", 
+                        "TM_Tempo_Dur": metrics.tempoDur || "", "TM_Tempo_Spd": metrics.tempoSpd || "", 
+                        "TM_Cooldown_Dur": metrics.cooldownDur || "", "TM_Cooldown_Spd": metrics.cooldownSpd || "",
+                        "Prog_Base_Dur": metrics.progBaseDur || "", "Prog_Base_Spd": metrics.progBaseSpd || "", 
+                        "Prog_Build_Dur": metrics.progBuildDur || "", "Prog_Build_Spd": metrics.progBuildSpd || "", 
+                        "Prog_Finish_Dur": metrics.progFinishDur || "", "Prog_Finish_Spd": metrics.progFinishSpd || "",
+                        "V_Weight_LBS": "", "V_Height_Inches": "", "V_Age_Years": "", "V_BMI": "", "V_MHR_Fox": "", "V_MHR_Tanaka": "",
+                        "V_Waist_Inches": "", "V_Chest_Inches": "", "V_Biceps_Inches": "", "V_Thigh_Inches": ""
                     };
                     
                     csv += headers.map(h => escapeCSV(rowData[h])).join(',') + '\n';
@@ -1723,17 +1673,6 @@
                 announce("Vitals Saved.");
             };
             
-            // Centralized function to replace a history entry or delete it
-            const handleUpdateHistoryEntry = (id, updatedEntry) => {
-                setHistory(prev => prev.map(entry => entry.id === id ? updatedEntry : entry));
-                announce("Entry updated successfully.");
-            };
-
-            const handleDeleteHistoryEntry = (id) => {
-                setHistory(prev => prev.filter(entry => entry.id !== id));
-                announce("Entry deleted successfully.");
-            };
-
             const masterExerciseList = useMemo(() => {
                 const standard = Object.values(DEFAULT_DB).flat();
                 const custom = Object.values(customDb).flat();
@@ -1864,7 +1803,7 @@
 
             const backupData = () => { 
                 triggerHaptic(); 
-                // Removed shoe mileage, shoeLimit from backup data
+                // Removed shoeMileage, shoeLimit from backup data
                 const data = { history, currentSession: todaysExercises, customDb, exportDate: new Date().toString() }; 
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); 
                 const url = URL.createObjectURL(blob); 
@@ -1893,7 +1832,7 @@
                         if(data.history) setHistory(data.history); 
                         if(data.currentSession) setTodaysExercises(data.currentSession); 
                         if(data.customDb) setCustomDb(data.customDb); 
-                        // Removed shoe mileage, shoeLimit from restore logic
+                        // Removed shoeMileage, shoeLimit from restore logic
                         announce("Restored."); 
                         playSound('success');
                     } catch(err) {
@@ -1997,8 +1936,6 @@
                                 <button onClick={() => {triggerHaptic(); setView('weights');}} className="w-full p-8 bg-blue-700 text-white rounded-xl shadow-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Dumbbell size={40} /><span className="text-3xl font-extrabold">{activeRoutine}</span></div></button>
                                 <button onClick={() => {triggerHaptic(); setTargetCardio(''); setView('cardio');}} className="w-full p-8 bg-indigo-700 text-white rounded-xl shadow-lg hover:bg-indigo-800 focus:ring-4 focus:ring-indigo-400 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Activity size={40} /><span className="text-3xl font-extrabold">Cardio</span></div></button>
                                 
-                                {/* Removed EDIT DATA LINK */}
-                                
                                 {/* NEW VITALS BUTTON */}
                                 <button onClick={() => {triggerHaptic(); setView('vitals');}} className="w-full p-6 bg-teal-600 text-white rounded-xl shadow border border-teal-500 hover:bg-teal-700 text-left flex items-center gap-4"><Icons.Heart size={32} /><span className="text-2xl font-bold">Vitals & BMI</span></button>
 
@@ -2006,7 +1943,6 @@
                                 {/* Removed redundant progress check link */}
                             </div>
                         )}
-                        {/* Removed EDIT DATA VIEWS */}
                         {view === 'bonus' && <BonusView onBack={() => {triggerHaptic(); setView('menu');}} onSaveBonus={handleBonusSave} availableExercises={masterExerciseList} history={history} onStartLucky={() => setView('lucky')} />}
                         {view === 'lucky' && <LuckyView onBack={() => {triggerHaptic(); setView('bonus');}} onSave={handleBonusSave} availableExercises={masterExerciseList} history={history} />}
                         {view === 'cardio' && <CardioForm history={history} onSave={handleSaveCardio} onCancel={() => setView('menu')} initialActivity={targetCardio} />}
