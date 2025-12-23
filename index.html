@@ -2,556 +2,1930 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bowflex Revolution Guide v10.0 (Data Enabled)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Project Hermes v1.0.7 (Athletic Tracker)</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React Engines -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
     <style>
-        /* --- ACCESSIBILITY & HIGH CONTRAST CORE --- */
-        :root {
-            --bg-color: #000000;
-            --text-color: #FFFFFF;
-            --accent-color: #FFFF00; /* Yellow for high visibility */
-            --btn-bg: #333333;
-            --btn-border: #FFFFFF;
-            --btn-focus: #0055FF;
-            --input-bg: #222222;
+        /* BASE DARK MODE STYLES */
+        body { 
+            overscroll-behavior-y: contain; 
+            -webkit-tap-highlight-color: transparent; 
+            background-color: #1a202c; 
+            color: #f1f5f9; 
+            font-family: 'Inter', sans-serif;
+        }
+        button { touch-action: manipulation; }
+        
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #1a202c; 
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 9999;
+            font-family: sans-serif; transition: opacity 0.5s;
+        }
+        
+        #error-message {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #450a0a; 
+            color: #fca5a5; 
+            padding: 20px; z-index: 10000;
+            font-family: monospace; white-space: pre-wrap; overflow: auto;
+            display: none; 
+            border: 5px solid #ef4444;
         }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Verdana', 'Arial', sans-serif;
-            font-size: 18px;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #334155; 
+            border-top: 5px solid #3b82f6; border-radius: 50%; 
+            animation: spin 1s linear infinite; margin-bottom: 20px;
         }
-
-        header {
-            background-color: #1a1a1a;
-            padding: 1rem;
-            text-align: center;
-            border-bottom: 2px solid var(--accent-color);
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
         }
-
-        h1 {
-            color: var(--accent-color);
-            margin: 0;
-            font-size: 1.8rem;
-        }
-
-        main {
-            padding: 1rem;
-            max-width: 800px;
-            margin: 0 auto;
-            padding-bottom: 3rem;
-        }
-
-        /* --- NAVIGATION BUTTONS --- */
-        .nav-item {
-            display: block;
-            width: 100%;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            background-color: var(--btn-bg);
-            color: var(--text-color);
-            border: 2px solid var(--btn-border);
-            border-radius: 8px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-align: left;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-
-        .nav-item:hover, .nav-item:focus {
-            background-color: #444;
-            outline: 4px solid var(--accent-color);
-            transform: scale(1.02);
-        }
-
-        .back-btn {
-            background-color: #000;
-            color: var(--accent-color);
-            border: 2px solid var(--accent-color);
-            padding: 0.5rem 1rem;
-            margin-bottom: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .back-btn:hover, .back-btn:focus {
-            background-color: var(--accent-color);
-            color: #000;
-        }
-
-        /* --- CONTENT BOXES --- */
-        .info-box {
-            background-color: #111;
-            border: 1px solid #555;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border-radius: 8px;
-        }
-
-        .box-warning {
-            border: 2px solid #FF4444;
-            background-color: #220000;
-        }
-
-        .box-success {
-            border: 2px solid #00FF00;
-            background-color: #002200;
-        }
-
-        h2 {
-            border-bottom: 1px solid #555;
-            padding-bottom: 0.5rem;
-            color: var(--accent-color);
-        }
-
-        h3 {
-            color: #AAA;
-            margin-top: 1.5rem;
-        }
-
-        ul.bulleted {
-            list-style-type: square;
-            padding-left: 1.5rem;
-        }
-
-        li {
-            margin-bottom: 0.8rem;
-        }
-
-        a {
-            color: var(--accent-color);
-            text-decoration: underline;
-            font-weight: bold;
-            display: inline-block;
-            padding: 5px 0;
-        }
-
-        /* --- FORMS & INPUTS --- */
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        select, input, textarea {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1.2rem;
-            margin-bottom: 1.5rem;
-            background-color: var(--input-bg);
+        
+        .radio-label input:checked + div {
+            background-color: #374151; /* Darker slate for selection */
             color: white;
-            border: 2px solid white;
-            border-radius: 4px;
-            box-sizing: border-box; /* Ensures padding doesn't affect width */
+            border-color: #4b5563;
         }
         
-        select:disabled {
-            opacity: 0.5;
-            border-color: #555;
+        .swipable-input-area {
+            position: relative;
+            touch-action: pan-y;
+        }
+        .swipe-indicator {
+            position: absolute;
+            top: 0; right: 0; bottom: 0;
+            padding: 8px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            font-size: 0.75rem; color: #4b5563;
+            pointer-events: none; opacity: 0.8;
+            border-left: 1px solid #475569;
         }
 
-        textarea {
-            min-height: 100px;
-            font-family: inherit;
+        /* Custom styling for the grouped segment inputs to look like cards */
+        .segment-card {
+            display: grid;
+            grid-template-areas: 
+                "name name"
+                "dur input-dur"
+                "spd input-spd";
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 8px; /* Vertical gap 4px, Horizontal gap 8px */
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #334155; /* slate-700 equivalent */
+            border: 1px solid #475569; /* slate-600 equivalent */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-
-        /* --- UTILITIES --- */
-        .hidden { display: none; }
+        .segment-name {
+            grid-area: name;
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 700; /* font-bold */
+            color: #d1d5db; /* gray-300 */
+            border-bottom: 1px solid #475569;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .segment-label {
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 700;
+            color: #94a3b8; /* slate-400 */
+            text-transform: uppercase;
+        }
+        .segment-dur-label { grid-area: dur; }
+        .segment-dur-input { grid-area: input-dur; }
+        .segment-spd-label { grid-area: spd; }
+        .segment-spd-input { grid-area: input-spd; }
         
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--accent-color);
-            color: black;
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 100;
-        }
+        /* Global Text Size Normalization */
+        .text-2xl { font-size: 1.25rem; } 
+        .text-3xl { font-size: 1.5rem; }  
+        .text-4xl { font-size: 2rem; }    
 
+        /* Preview Card Specific Styles (for visual reference) */
+        .preview-gradient-bg {
+            background-image: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%);
+        }
+        .preview-text-shadow {
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
-<body>
-
-<header role="banner">
-    <h1>Bowflex Revolution v10</h1>
-    <p style="font-size: 1rem;">Training Log & Guide</p>
-</header>
-
-<main id="app-root" role="main" aria-live="polite">
-    <!-- Content injected via JS -->
-</main>
-
-<!-- Notification Toast for Screen Readers -->
-<div id="toast" class="toast" role="alert">Settings Saved</div>
-
-<script>
-    /* --- 1. DATA MANAGEMENT SYSTEM --- */
+<body class="bg-gray-900 text-gray-100 font-sans pb-20">
     
-    // Load data from LocalStorage or create empty object
-    let userHistory = JSON.parse(localStorage.getItem('bowflex_data_v1')) || {};
+    <div id="loading-screen" role="alert" aria-live="assertive">
+        <div class="spinner" aria-hidden="true"></div>
+        <h1 class="text-xl font-bold text-gray-300">Loading Project Hermes v1.0.7....</h1>
+    </div>
 
-    function saveHistory() {
-        localStorage.setItem('bowflex_data_v1', JSON.stringify(userHistory));
-        showToast("Data Saved");
-    }
+    <div id="error-message"></div>
+    <div id="root"></div> 
 
-    function exportData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userHistory));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        const date = new Date().toISOString().slice(0, 10);
-        downloadAnchorNode.setAttribute("download", `bowflex_backup_${date}.json`);
-        document.body.appendChild(downloadAnchorNode); // required for firefox
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    function importData(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const contents = e.target.result;
-                const parsed = JSON.parse(contents);
-                userHistory = parsed;
-                saveHistory();
-                alert("Backup restored successfully! Your past weights are loaded.");
-                renderSettings(); // Refresh view
-            } catch (err) {
-                alert("Error reading file. Please ensure it is a valid JSON backup.");
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            const loader = document.getElementById('loading-screen');
+            const errDiv = document.getElementById('error-message');
+            if (loader) loader.style.display = 'none';
+            if (errDiv) {
+                errDiv.style.display = 'block';
+                errDiv.innerHTML = "<strong>CRITICAL SCRIPT ERROR:</strong>\n\n" + "Message: " + msg + "\nFile: " + url + "\nLine: " + line + "\nColumn: " + col + "\n\nStack: " + (error ? error.stack : 'N/A');
             }
+            return true; 
         };
-        reader.readAsText(file);
-    }
-
-    function clearData() {
-        if(confirm("Are you sure? This will delete all recorded weights and notes.")) {
-            userHistory = {};
-            saveHistory();
-            renderSettings();
-        }
-    }
-
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.style.opacity = '1';
-        setTimeout(() => { t.style.opacity = '0'; }, 2000);
-    }
-
-    /* --- 2. CONTENT DATABASE --- */
-    const SECTIONS = {
-        safety: `
-            <h3>Safety Precautions</h3>
-            <div class="info-box box-warning">
-                <h4>CRITICAL WARNINGS</h4>
-                <ul class="bulleted">
-                    <li><strong>Clearance:</strong> Keep 7 feet of free space.</li>
-                    <li><strong>Locking:</strong> ALWAYS ensure Freedom Arms are locked.</li>
-                    <li><strong>Stop:</strong> If you feel faint or pain, stop immediately.</li>
-                </ul>
-            </div>
-        `,
-        gettingStarted: `
-            <h3>Getting to Know Your Machine</h3>
-            <h4>The Freedom Arms (Positions 1-9)</h4>
-            <ul class="bulleted">
-                <li><strong>Pos 1 (High):</strong> Pulldowns, Triceps.</li>
-                <li><strong>Pos 2-4 (Upper):</strong> Incline Press.</li>
-                <li><strong>Pos 5 (Middle):</strong> Chest Press, Rows.</li>
-                <li><strong>Pos 6-8 (Lower):</strong> Decline Press.</li>
-                <li><strong>Pos 9 (Low):</strong> Squats, Curls.</li>
-            </ul>
-        `,
-        maintenance: `
-            <h3>Maintenance</h3>
-            <ul class="bulleted">
-                <li><strong>Daily:</strong> Check cables for wear.</li>
-                <li><strong>Weekly:</strong> Clean bench.</li>
-            </ul>
-        `,
-        resources: `
-            <h3>PDF & Video Resources</h3>
-            <div class="info-box">
-                <h4>Official PDF Manuals</h4>
-                <ul class="bulleted">
-                    <li><a href="https://download.bowflex.com/supportdocs/OM/Bowflex/BFX_Revolution_OM_RevC_web.pdf" target="_blank">Owner's Manual (PDF)</a></li>
-                    <li><a href="https://download.bowflex.com/supportdocs/AM/Bowflex/BFX_Revolution_AM_RevA_web.pdf" target="_blank">Assembly Manual (PDF)</a></li>
-                </ul>
-            </div>
-            <div class="info-box">
-                <h4>Community Links</h4>
-                <ul class="bulleted">
-                    <li><a href="https://www.youtube.com/c/bowflexworkouts/videos" target="_blank">Bowflex Workouts YouTube</a></li>
-                    <li><a href="https://www.reddit.com/r/Bowflex/" target="_blank">r/Bowflex Reddit</a></li>
-                </ul>
-            </div>
-        `
-    };
-
-    /* --- 3. EXERCISE DATABASE (128+ Entries) --- */
-    const EXERCISES = {
-        chest: [
-            { name: "Bench Press (Flat - Bar)", setup: "Arms: Pos 5 (Horizontal). Bench: Flat.", tip: "Standard chest press." },
-            { name: "Bench Press (Flat - Handles)", setup: "Arms: Pos 5 (Horizontal). Bench: Flat.", tip: "Allows deeper stretch." },
-            { name: "Bench Press (Incline - Bar)", setup: "Arms: Pos 4 (Angled Up). Bench: 45°.", tip: "Target upper chest." },
-            { name: "Bench Press (Incline - Handles)", setup: "Arms: Pos 4 (Angled Up). Bench: 45°.", tip: "Upper chest handles." },
-            { name: "Bench Press (Decline)", setup: "Arms: Pos 6 (Angled Down). Bench: Flat.", tip: "Press slightly downward." },
-            { name: "Chest Fly (Flat)", setup: "Arms: Pos 5. Bench: Flat.", tip: "Wide arc motion." },
-            { name: "Chest Fly (Incline)", setup: "Arms: Pos 4. Bench: 45°.", tip: "Upper chest fly." },
-            { name: "Close Grip Press", setup: "Arms: Pos 5. Bench: Flat.", tip: "Hands together." },
-            { name: "Cable Crossover", setup: "Arms: Pos 1 (High). Standing.", tip: "Pull down across body." },
-            { name: "Resisted Punch", setup: "Arms: Pos 5. Standing.", tip: "Alternating punches." },
-            { name: "One Arm Bench Press", setup: "Arms: Pos 5. Bench: Flat.", tip: "Core stability." }
-        ],
-        shoulders: [
-            { name: "Seated Shoulder Press", setup: "Arms: Pos 9 (Low). Bench: Vertical.", tip: "Press straight up." },
-            { name: "Standing Shoulder Press", setup: "Arms: Pos 9 (Low). Standing.", tip: "Press overhead." },
-            { name: "Front Shoulder Raise", setup: "Arms: Pos 9. Standing.", tip: "Raise straight forward." },
-            { name: "Lateral Raise", setup: "Arms: Pos 9. Standing.", tip: "Raise to side." },
-            { name: "Rear Delt Row", setup: "Arms: Pos 5 (Mid). Standing.", tip: "Pull elbows back high." },
-            { name: "Crossover Rear Delt", setup: "Arms: Pos 5. Standing.", tip: "Cross cables. Pull back." },
-            { name: "Reverse Fly", setup: "Arms: Pos 5. Standing.", tip: "Straight arm reverse." },
-            { name: "Shrugs", setup: "Arms: Pos 9. Standing.", tip: "Shrug shoulders to ears." },
-            { name: "Rotator Cuff (Int)", setup: "Arms: Pos 5. Side Stand.", tip: "Rotate across belly." },
-            { name: "Rotator Cuff (Ext)", setup: "Arms: Pos 5. Side Stand.", tip: "Rotate outward." }
-        ],
-        back: [
-            { name: "Seated Lat Row (Bar)", setup: "Arms: Pos 9 (Low). Bench: Flat.", tip: "Row with bar." },
-            { name: "Seated Lat Row (Handles)", setup: "Arms: Pos 9. Bench: Flat.", tip: "Row with handles." },
-            { name: "Standing Low Back Ext", setup: "Arms: Pos 9. Harness.", tip: "Hinge at hips." },
-            { name: "Bent Over Row", setup: "Arms: Pos 9. Standing.", tip: "Flat back, pull to waist." },
-            { name: "Lat Pulldown (Wide)", setup: "Arms: Pos 1 (High). Bench: Locked.", tip: "Wide grip." },
-            { name: "Lat Pulldown (Narrow)", setup: "Arms: Pos 1. Bench: Locked.", tip: "Close grip." },
-            { name: "Reverse Grip Pulldown", setup: "Arms: Pos 1. Bench: Locked.", tip: "Palms facing you." },
-            { name: "Stiff Arm Pulldown", setup: "Arms: Pos 1. Standing.", tip: "Straight arms down to thighs." },
-            { name: "Pullover (Lying)", setup: "Arms: Pos 9. Bench: Flat.", tip: "Pull from behind head." },
-            { name: "One Arm Row", setup: "Arms: Pos 9. Seated.", tip: "Isolate one side." }
-        ],
-        arms: [
-            { name: "Triceps Pushdown", setup: "Arms: Pos 1 (High). Standing.", tip: "Elbows pinned." },
-            { name: "Triceps Extension (Overhead)", setup: "Arms: Pos 5 (Mid). Seated.", tip: "French press." },
-            { name: "Triceps Kickback", setup: "Arms: Pos 9 (Low). Bent Over.", tip: "Extend arm back." },
-            { name: "Lying Triceps Ext", setup: "Arms: Pos 9. Bench: Flat.", tip: "Skullcrushers." },
-            { name: "Biceps Curl (Standing)", setup: "Arms: Pos 9 (Low). Standing.", tip: "Standard curl." },
-            { name: "Seated Curl", setup: "Arms: Pos 9. Seated.", tip: "Strict form." },
-            { name: "Concentration Curl", setup: "Arms: Pos 9. Seated.", tip: "Elbow on knee." },
-            { name: "Hammer Curl", setup: "Arms: Pos 9. Standing.", tip: "Neutral grip." },
-            { name: "Preacher Curl", setup: "Arms: Pos 9. Preacher Attach.", tip: "Elbows supported." },
-            { name: "Wrist Curl", setup: "Arms: Pos 9. Seated.", tip: "Forearms." }
-        ],
-        legs: [
-            { name: "Leg Extension", setup: "Arms: Pos 9. Leg Attach.", tip: "Quads." },
-            { name: "Leg Curl (Lying)", setup: "Arms: Pos 9. Leg Attach.", tip: "Hamstrings." },
-            { name: "Leg Press", setup: "Arms: Pos 9. Seatback.", tip: "Push with heels." },
-            { name: "Squat (Bar)", setup: "Arms: Pos 9. Standing.", tip: "Bar on shoulders." },
-            { name: "Squat (Harness)", setup: "Arms: Pos 9. Standing.", tip: "Harness on shoulders." },
-            { name: "Calf Raise", setup: "Arms: Pos 9. Leg Press Setup.", tip: "Toe press." },
-            { name: "Glute Kickback", setup: "Arms: Pos 9. Ankle Cuff.", tip: "Kick straight back." },
-            { name: "Deadlift", setup: "Arms: Pos 9. Bar.", tip: "Hinge at hips." },
-            { name: "Lunge", setup: "Arms: Pos 9. Harness.", tip: "Step forward." }
-        ],
-        core: [
-            { name: "Resisted Crunch", setup: "Arms: Pos 1 (High). Harness.", tip: "Crunch forward." },
-            { name: "Oblique Crunch", setup: "Arms: Pos 1. Harness.", tip: "Crunch diagonally." },
-            { name: "Woodchop (High-Low)", setup: "Arms: Pos 1. Standing.", tip: "Chop down." },
-            { name: "Woodchop (Low-High)", setup: "Arms: Pos 9. Standing.", tip: "Chop up." },
-            { name: "Trunk Rotation", setup: "Arms: Pos 5. Seated.", tip: "Twist torso." },
-            { name: "Reverse Crunch", setup: "Arms: Pos 9. Leg Attach.", tip: "Knees to chest." },
-            { name: "Side Bend", setup: "Arms: Pos 9. Standing.", tip: "Bend sideways." }
-        ]
-    };
-
-    /* --- 4. APP VIEW LOGIC --- */
-    const appRoot = document.getElementById('app-root');
-
-    function renderMenu() {
-        // Generate Step 1 Dropdown
-        let groupOptions = '<option value="" disabled selected>Select Muscle Group...</option>';
-        for(const group of Object.keys(EXERCISES)) {
-            const niceName = group.toUpperCase();
-            groupOptions += `<option value="${group}">${niceName}</option>`;
-        }
-
-        appRoot.innerHTML = `
-            <div class="view active">
-                
-                <div class="info-box" style="border-color: var(--accent-color);">
-                    <h3>⚡ Quick Access</h3>
-                    
-                    <label for="groupFilter">Step 1: Choose Body Part</label>
-                    <select id="groupFilter" onchange="updateExerciseDropdown(this.value)">${groupOptions}</select>
-                    
-                    <label for="exerciseSelect">Step 2: Choose Exercise</label>
-                    <select id="exerciseSelect" disabled onchange="handleShortcut(this.value)">
-                        <option>Select a body part first...</option>
-                    </select>
-                </div>
-
-                <nav>
-                    <button class="nav-item" onclick="renderSection('safety')">1. Safety Instructions</button>
-                    <button class="nav-item" onclick="renderSection('gettingStarted')">2. Getting Started</button>
-                    <button class="nav-item" onclick="renderExerciseMenu()">3. Full Exercise List</button>
-                    <button class="nav-item" onclick="renderSettings()">4. Settings & Data Backup</button>
-                    <button class="nav-item" onclick="renderSection('resources')">5. PDF Resources</button>
-                </nav>
-            </div>
-        `;
-    }
-
-    function updateExerciseDropdown(group) {
-        const select = document.getElementById('exerciseSelect');
-        const list = EXERCISES[group];
-        let html = '<option value="" disabled selected>Select an Exercise...</option>';
-        list.forEach((ex, idx) => {
-            html += `<option value="${group}|${idx}">${ex.name}</option>`;
-        });
-        select.innerHTML = html;
-        select.disabled = false;
-        select.focus();
-    }
-
-    function handleShortcut(val) {
-        if(!val) return;
-        const [group, idx] = val.split('|');
-        renderExerciseDetail(group, parseInt(idx));
-    }
-
-    function renderExerciseMenu() {
-        let html = `
-            <div class="view active">
-                <button class="back-btn" onclick="renderMenu()">← Back to Main Menu</button>
-                <h2>Select Muscle Group</h2>
-                <nav>
-        `;
-        for(const group of Object.keys(EXERCISES)) {
-            html += `<button class="nav-item" onclick="renderExerciseList('${group}')">${group.toUpperCase()}</button>`;
-        }
-        html += `</nav></div>`;
-        appRoot.innerHTML = html;
-    }
-
-    function renderExerciseList(group) {
-        const list = EXERCISES[group];
-        let html = `
-            <div class="view active">
-                <button class="back-btn" onclick="renderExerciseMenu()">← Back to Categories</button>
-                <h2>${group.toUpperCase()} (${list.length})</h2>
-                <nav>
-        `;
-        list.forEach((ex, index) => {
-            html += `<button class="nav-item" onclick="renderExerciseDetail('${group}', ${index})">${ex.name}</button>`;
-        });
-        html += `</nav></div>`;
-        appRoot.innerHTML = html;
-    }
-
-    function renderExerciseDetail(group, index) {
-        const ex = EXERCISES[group][index];
-        const id = `${group}|${index}`;
         
-        // Retrieve saved data for this specific exercise
-        const savedData = userHistory[id] || { weight: '', notes: '' };
+        setTimeout(function() {
+            const root = document.getElementById('root');
+            if (!root || root.innerHTML.trim() === '') {
+                const loader = document.getElementById('loading-screen');
+                    if (loader && loader.style.display !== 'none') {
+                    loader.style.display = 'none';
+                    const errDiv = document.getElementById('error-message');
+                    if (errDiv && errDiv.style.display === 'none') {
+                        errDiv.style.display = 'block';
+                        errDiv.innerHTML = "<strong>Timeout:</strong> The app is taking too long to start. Please try refreshing.";
+                    }
+                }
+            }
+        }, 5000);
+    </script>
 
-        appRoot.innerHTML = `
-            <div class="view active">
-                <button class="back-btn" onclick="renderExerciseList('${group}')">← Back to List</button>
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- UPDATED CONSTANTS FOR PROJECT HERMES ---
+        const VERSION = '1.0.7'; 
+        const APP_NAME = 'Project Hermes'; 
+
+        const DEFAULT_DB = {
+            'Upper Body': ['Bench Press', 'Overhead Press', 'Pull Ups', 'Dumbbell Rows', 'Bicep Curls', 'Tricep Dips', 'Lat Pulldown', 'Chest Fly', 'Face Pulls', 'Push Ups'],
+            'Lower Body': ['Squats', 'Deadlifts', 'Lunges', 'Leg Press', 'Romanian Deadlifts', 'Calf Raises', 'Leg Extensions', 'Hamstring Curls', 'Goblet Squats'],
+            'Core': ['Plank', 'Crunches', 'Leg Raises', 'Russian Twists', 'Ab Wheel', 'Bicycle Crunches', 'Hanging Leg Raises', 'Side Plank']
+        };
+        
+        const getRoutineForDay = (date) => (date.getDay() === 1 || date.getDay() === 4) ? 'Lower Body' : (date.getDay() === 2 || date.getDay() === 5) ? 'Upper Body' : 'Core';
+        const formatDate = (date) => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(date);
+        const triggerHaptic = () => { if (window.navigator?.vibrate) window.navigator.vibrate(50); };
+
+        const calculateBMI = (weight, height) => {
+            const w = parseFloat(weight), h = parseFloat(height);
+            if (!w || !h || w <= 0 || h <= 0) return { val: '--', status: 'Unknown' };
+            const bmi = (703 * w) / (h * h);
+            let status = 'Normal';
+            if (bmi < 18.5) status = 'Underweight';
+            else if (bmi >= 25 && bmi < 29.9) status = 'Overweight';
+            else if (bmi >= 30) status = 'Obese';
+            return { val: bmi.toFixed(1), status };
+        };
+
+        const calculateMHR = (age) => {
+            const a = parseFloat(age);
+            if (!a || a <= 0) return { fox: '--', tanaka: '--' };
+            return { fox: Math.round(220 - a), tanaka: Math.round(208 - (0.7 * a)) };
+        };
+
+        const getTimeAgo = (dateString) => {
+            if (!dateString) return '';
+            const days = Math.floor((new Date() - new Date(dateString)) / (1000 * 60 * 60 * 24));
+            return days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`;
+        };
+        
+        const calculateTotalVolume = (exercises) => {
+            if (!exercises || exercises.length === 0) return 0;
+            return Math.round(exercises.reduce((sum, ex) => {
+                const weight = parseFloat(ex.weight) || 0;
+                const reps = parseFloat(ex.reps) || 0;
+                const sets = parseFloat(ex.sets) || 0;
+                return sum + (weight * reps * sets);
+            }, 0));
+        };
+
+        // --- AUDIO ENGINE ---
+        const audioCtxRef = { current: null };
+        let audioSuspendTimeout;
+
+        const playSound = (type) => {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
                 
-                <div class="info-box" role="article">
-                    <h2 style="font-size: 2rem; color: var(--accent-color);">${ex.name}</h2>
-                    
-                    <h3>⚙️ Setup</h3>
-                    <p style="font-size: 1.4rem;">${ex.setup}</p>
-                    
-                    <h3>💡 Pro Tip</h3>
-                    <p style="font-size: 1.4rem;">${ex.tip}</p>
-                </div>
+                clearTimeout(audioSuspendTimeout);
+                if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+                if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume().catch(e => console.log(e));
+                const ctx = audioCtxRef.current;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                const now = ctx.currentTime;
+                
+                const sounds = {
+                    success: { start: 880, end: 1760, duration: 0.5, type: 'sine', gain: 0.3 },
+                    delete: { start: 600, end: 100, duration: 0.3, type: 'triangle', gain: 0.3 },
+                    thud: { start: 100, end: 100, duration: 0.15, type: 'square', gain: 0.4 },
+                    click: { start: 1200, end: 1200, duration: 0.05, type: 'sine', gain: 0.1 },
+                    skip: { start: 300, end: 50, duration: 0.2, type: 'triangle', gain: 0.2 },
+                    tick: { start: 600, end: 600, duration: 0.05, type: 'sine', gain: 0.05 }
+                };
+                
+                let duration = 0.5;
+                if (type === 'alert') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.setValueAtTime(440, now + 0.05); osc.frequency.setValueAtTime(0, now + 0.06); osc.frequency.setValueAtTime(440, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.2); osc.start(now); osc.stop(now + 0.2);
+                    duration = 0.2;
+                } else {
+                    const s = sounds[type];
+                    if (!s) return;
+                    duration = s.duration;
+                    osc.type = s.type; osc.frequency.setValueAtTime(s.start, now);
+                    if (s.start !== s.end) osc.frequency.exponentialRampToValueAtTime(s.end, now + s.duration);
+                    gain.gain.setValueAtTime(s.gain, now); gain.gain.exponentialRampToValueAtTime(0.01, now + s.duration); 
+                    osc.start(now); osc.stop(now + s.duration);
+                }
 
-                <div class="info-box box-success">
-                    <h3>📝 Log Progress</h3>
-                    
-                    <label for="weightIn">Weight Used (lbs):</label>
-                    <input type="number" id="weightIn" value="${savedData.weight}" placeholder="e.g. 80" onchange="updateHistory('${id}', 'weight', this.value)">
-                    
-                    <label for="notesIn">Notes:</label>
-                    <textarea id="notesIn" placeholder="e.g. Seat pos 4, hard last rep" onchange="updateHistory('${id}', 'notes', this.value)">${savedData.notes}</textarea>
-                    
-                    <p id="saveMsg_${id}" style="color:var(--accent-color); font-weight:bold; display:none;" aria-live="polite">Saved!</p>
-                </div>
-            </div>
-        `;
-    }
+                audioSuspendTimeout = setTimeout(() => {
+                    if (audioCtxRef.current && audioCtxRef.current.state !== 'suspended') {
+                        audioCtxRef.current.suspend().catch(e => console.log("Audio suspend error:", e));
+                    }
+                }, Math.max(2000, (duration + 0.5) * 1000));
+            } catch (e) { console.error("Audio error", e); }
+        };
+        
+        const useWakeLock = (shouldLock) => {
+            useEffect(() => {
+                let wakeLock = null;
+                const requestLock = async () => { try { if ('wakeLock' in navigator && shouldLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) { console.log("Wake Lock error:", err); } };
+                const releaseLock = async () => { if (wakeLock) { try { await wakeLock.release(); wakeLock = null; } catch (err) { console.log("Wake Lock release error:", err); } } };
+                if (shouldLock) requestLock(); else releaseLock();
+                const handleVisibilityChange = () => { if (document.visibilityState === 'visible' && shouldLock) requestLock(); };
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                return () => { releaseLock(); document.removeEventListener('visibilitychange', handleVisibilityChange); };
+            }, [shouldLock]);
+        };
 
-    function updateHistory(id, field, value) {
-        if (!userHistory[id]) userHistory[id] = {};
-        userHistory[id][field] = value;
-        
-        saveHistory(); // Write to localstorage
-        
-        // Show visual feedback
-        const msg = document.getElementById(`saveMsg_${id}`);
-        if(msg) {
-            msg.style.display = 'block';
-            setTimeout(() => msg.style.display = 'none', 2000);
+        const Icons = {
+            Activity: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+            AlertTriangle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3ZM12 9v4"/><path d="M12 17h.01"/></svg>,
+            ArrowRight: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
+            ArrowLeft: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
+            Check: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>,
+            CheckCircle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            ChevronDown: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6 9 6 6 6-6"/></svg>,
+            ChevronUp: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m18 15-6-6-6 6"/></svg>,
+            Circle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/></svg>,
+            Database: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Download: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+            Dumbbell: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>,
+            Edit2: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5L2 22l1.5-5.5L17 3z"/></svg>,
+            FileText: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>,
+            Heart: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>,
+            Hourglass: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>,
+            List: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>,
+            Moon: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
+            Pause: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>,
+            Play: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
+            Plus: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>,
+            RefreshCw: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>,
+            Save: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            Send: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>,
+            Search: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            SkipForward: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>,
+            Trash2: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+            Upload: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+            History: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>,
+            Settings: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 0-2 2v.44a2 2 0 0 0-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2h.44a2 2 0 0 0 2 2v.44a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.44a2 2 0 0 0 2-2v-.44a2 2 0 0 0 2-2h.44a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2h-.44a2 2 0 0 0-2-2v-.44a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Cloud: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>,
+            X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+        };
+
+        function StaticInput({ id, label, value, onChange, unit="", inputMode="numeric", stepValue=0, isSegmentInput = false, className = "" }) {
+            const isSteppable = stepValue !== 0 && (unit.includes('pound') || unit.includes('%') || unit.includes('minute') || unit.includes('second') || unit.includes('mph') || unit.includes('years') || unit.includes('inches') || unit.includes('bpm') || stepValue === 1); 
+            const [touchStart, setTouchStart] = useState(null);
+
+            const handleInputChange = (e) => {
+                let rawValue = e.target.value;
+                let cleanedValue;
+
+                if (inputMode === 'decimal') {
+                    cleanedValue = rawValue.replace(/[^\d.]/g, '');
+                    const parts = cleanedValue.split('.');
+                    if (parts.length > 2) {
+                        cleanedValue = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                } else {
+                    cleanedValue = rawValue.replace(/[^\d]/g, '');
+                }
+                
+                onChange(cleanedValue);
+            };
+
+            const handleStep = (direction) => {
+                let numVal = parseFloat(value) || 0;
+                if (label.includes('Effort') || label.includes('Score')) {
+                    if (direction === 'up') numVal = Math.min(10, numVal + stepValue);
+                    else numVal = Math.max(1, numVal - stepValue);
+                } else {
+                    numVal = direction === 'up' ? numVal + stepValue : Math.max(0, numVal - stepValue);
+                }
+                
+                const stepPrecision = stepValue.toString().includes('.') ? stepValue.toString().split('.')[1].length : 0;
+                const valuePrecision = value.toString().includes('.') ? value.toString().split('.')[1].length : 0;
+                const precision = Math.max(stepPrecision, valuePrecision);
+                
+                const finalValue = numVal.toFixed(precision);
+                triggerHaptic();
+                onChange(finalValue);
+            };
+            
+            const handleTouchStart = (e) => { 
+                if (!isSteppable || isSegmentInput) return;
+                e.stopPropagation(); 
+                setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY }); 
+            };
+            const handleTouchMove = (e) => { 
+                if (!isSteppable || isSegmentInput || !touchStart) return; 
+                if (Math.abs(e.touches[0].clientY - touchStart.y) > 10) {
+                    e.preventDefault(); 
+                }
+            };
+
+            const handleTouchEnd = (e) => {
+                if (!isSteppable || isSegmentInput || !touchStart) return;
+                e.preventDefault();
+                const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+                const diffX = touchEnd.x - touchStart.x;
+                const diffY = touchEnd.y - touchStart.y;
+                const threshold = 30;
+
+                if (Math.abs(diffY) > threshold && Math.abs(diffY) > Math.abs(diffX)) {
+                    handleStep(diffY < 0 ? 'up' : 'down');
+                }
+                setTouchStart(null);
+            };
+
+            const InputField = (
+                <div className={`relative ${!isSegmentInput ? 'swipable-input-area' : ''}`} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+                    <input 
+                        id={id} type="text" inputMode={inputMode} value={value} onChange={handleInputChange} 
+                        className={`w-full p-4 text-xl border border-slate-600 rounded bg-slate-800 text-white text-center font-bold pr-16 ${className}`} 
+                        placeholder={unit ? `Enter ${unit}` : '0'}
+                        aria-valuetext={isSteppable ? `${value} ${unit}. Swipe up or down to adjust.` : `${value} ${unit}`}
+                        role={isSteppable ? "spinbutton" : "textbox"} aria-valuenow={parseFloat(value) || 0}
+                        onKeyDown={(e) => {
+                            if (!isSteppable) return;
+                            if (e.key === 'ArrowUp') { e.preventDefault(); handleStep('up'); } 
+                            else if (e.key === 'ArrowDown') { e.preventDefault(); handleStep('down'); }
+                        }}
+                    />
+                    {isSteppable && !isSegmentInput && (
+                        <div className="swipe-indicator" aria-hidden="true">
+                            <Icons.ChevronUp size={16} className="text-gray-400" /><span className="text-gray-400 font-bold">SWIPE</span><Icons.ChevronDown size={16} className="text-gray-400" />
+                        </div>
+                    )}
+                </div>
+            );
+
+            if (isSegmentInput) {
+                return (
+                    <>
+                        {InputField}
+                        {unit && <span className="block text-xs text-gray-400 text-right mt-1" aria-hidden="true">{unit}</span>}
+                    </>
+                );
+            }
+
+            return (
+                <div className="mb-4">
+                     {/* Accessibility: Native VoiceOver reads the label */}
+                     <label htmlFor={id} className="block text-sm font-bold text-gray-400 mb-1 capitalize">{label}</label>
+                     {InputField}
+                    {unit && <span className="block text-xs text-gray-400 text-right mt-1" aria-hidden="true">{unit}</span>}
+                </div>
+            );
         }
-    }
 
-    function renderSection(sectionId) {
-        const content = SECTIONS[sectionId] || "<p>Content loading...</p>";
-        appRoot.innerHTML = `
-            <div class="view active">
-                <button class="back-btn" onclick="renderMenu()">← Back to Main Menu</button>
-                <div tabindex="0" role="document" style="outline:none;">
-                    ${content}
-                </div>
-            </div>
-        `;
-    }
-
-    function renderSettings() {
-        appRoot.innerHTML = `
-            <div class="view active">
-                <button class="back-btn" onclick="renderMenu()">← Back to Main Menu</button>
-                <h2>Settings & Data</h2>
+        function DataAnalyzerView({ history, onBack, onFixMissing }) {
+            const audit = useMemo(() => {
+                const results = [];
+                const etpTypes = ['Endurance Run', 'Tempo Run', 'Progressive Run'];
+                const now = new Date();
                 
-                <div class="info-box">
-                    <h3>Backup Data</h3>
-                    <p>Save your progress to the iOS Files app (iCloud/On My iPhone).</p>
-                    <button class="nav-item" onclick="exportData()">⬇️ Export Backup File</button>
+                for (let i = 0; i < 14; i++) {
+                    const checkDate = new Date(now);
+                    checkDate.setDate(checkDate.getDate() - i);
+                    const dateStr = checkDate.toLocaleDateString();
+                    const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(checkDate);
+                    const focus = getRoutineForDay(checkDate);
+
+                    const dayEntries = history.filter(h => new Date(h.date).toLocaleDateString() === dateStr);
+                    
+                    const check = (label, predicate, type) => {
+                        const found = dayEntries.find(predicate);
+                        if (found) return { label, status: found.isRest ? 'rest' : 'done' };
+                        return { label, status: 'missing', type };
+                    };
+
+                    results.push({
+                        date: dateStr,
+                        dayName,
+                        tasks: [
+                            check('HIIT Run', h => h.isCardio && h.activity === 'HIIT Run', 'Cardio'),
+                            check('Indoor Cycle', h => h.isCardio && h.activity === 'Indoor Cycle', 'Cardio'),
+                            check(`${focus} Focus`, h => !h.isCardio && !h.isBonus && !h.isVital && (h.routine === focus || h.isRest), 'Strength'),
+                            check('ETP Run', h => h.isCardio && etpTypes.includes(h.activity), 'Cardio'),
+                            check('Incline Walk', h => h.isCardio && h.activity === 'Incline Walk', 'Cardio')
+                        ]
+                    });
+                }
+                return results;
+            }, [history]);
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <button onClick={onBack} className="text-gray-400 font-bold flex items-center gap-1 p-2 bg-slate-700 rounded hover:bg-slate-600">
+                            <Icons.ArrowLeft size={20} /> Back
+                        </button>
+                        <h2 className="text-xl font-bold text-white">Missing Activity Audit (14 Days)</h2>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        {audit.map((day, idx) => (
+                            <div key={idx} className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-md">
+                                <div className="flex justify-between items-center mb-3 border-b border-slate-700 pb-2">
+                                    <span className="text-lg font-bold text-white">{day.dayName}, {day.date}</span>
+                                    {day.tasks.every(t => t.status !== 'missing') && <Icons.CheckCircle size={20} className="text-green-400" />}
+                                </div>
+                                <ul className="space-y-3 list-none p-0">
+                                    {day.tasks.map((task, tIdx) => (
+                                        <li key={tIdx} className="flex flex-col gap-2 p-2 bg-slate-900/50 rounded">
+                                            <div className="flex items-center justify-between">
+                                                <span className={`text-sm ${task.status === 'missing' ? 'text-red-400 font-bold' : 'text-gray-400'}`}>{task.label}</span>
+                                                {task.status === 'done' ? (
+                                                    <Icons.Check className="text-green-500" size={16} />
+                                                ) : task.status === 'rest' ? (
+                                                    <Icons.Moon className="text-blue-400" size={16} />
+                                                ) : (
+                                                    <Icons.AlertTriangle className="text-red-500" size={16} />
+                                                )}
+                                            </div>
+                                            {task.status === 'missing' && (
+                                                <button 
+                                                    onClick={() => onFixMissing(day.date, task.label, task.type)}
+                                                    className="w-full py-2 bg-slate-700 text-xs text-white font-bold rounded border border-slate-600 hover:bg-slate-600 active:bg-slate-500 flex items-center justify-center gap-2"
+                                                >
+                                                    <Icons.Moon size={14} /> Mark as Rest Day
+                                                </button>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+            );
+        }
 
-                <div class="info-box">
-                    <h3>Restore Data</h3>
-                    <p>Load a previously saved backup file.</p>
-                    <input type="file" id="importFile" accept=".json" style="margin-bottom:1rem;" onchange="importData(event)">
+        function ActiveRunTimer({ phases, type, onComplete }) {
+            const [currentPhaseIndex, setCurrentPhaseIndex] = useState(-1);
+            const [timeLeft, setTimeLeft] = useState(10);
+            const [isPaused, setIsPaused] = useState(false);
+            const [isFinished, setIsFinished] = useState(false);
+            const timerRef = useRef(null);
+            
+            const getPhaseSpeed = (idx) => (idx >= 0 && idx < phases.length && phases[idx].speed > 0) ? `Speed ${phases[idx].speed}.` : "";
+            
+            useEffect(() => { /* No custom speech on start */ }, []); 
+
+            useEffect(() => {
+                if (isPaused || isFinished) { clearInterval(timerRef.current); return; }
+
+                timerRef.current = setInterval(() => {
+                    setTimeLeft((prev) => {
+                        const nextTime = prev - 1;
+                        if (currentPhaseIndex === -1) {
+                            if (nextTime === 5) { playSound('tick'); }
+                            if (nextTime <= 3 && nextTime > 0) { playSound('tick'); }
+                            
+                            if (nextTime < 0) { handlePhaseTransition(0, phases); return phases[0].durationMinutes * 60; }
+                            return nextTime;
+                        }
+
+                        const phaseDur = phases[currentPhaseIndex].durationMinutes * 60;
+                        const elapsed = phaseDur - nextTime;
+                        
+                        if (elapsed > 0 && elapsed % 300 === 0 && nextTime > 10) { playSound('alert'); }
+                        if (nextTime === 10) { playSound('tick'); }
+                        else if (nextTime < 10 && nextTime > 0) { playSound('tick'); }
+
+                        if (nextTime < 0) { handlePhaseTransition(currentPhaseIndex + 1, phases); return 0; }
+                        return nextTime;
+                    });
+                }, 1000);
+
+                return () => clearInterval(timerRef.current);
+            }, [currentPhaseIndex, isPaused, isFinished, phases]);
+
+            const handlePhaseTransition = (nextIndex, currentPhases = phases) => {
+                if (nextIndex < currentPhases.length) {
+                    const nextPhase = currentPhases[nextIndex];
+                    setCurrentPhaseIndex(nextIndex);
+                    setTimeLeft(nextPhase.durationMinutes * 60);
+                    playSound('success');
+                    // ACCESSIBILITY: Using aria-live on the h2 to announce phase change
+                } else {
+                    setIsFinished(true); clearInterval(timerRef.current); playSound('success');
+                    setTimeout(onComplete, 3000);
+                }
+            };
+
+            const togglePause = () => { triggerHaptic(); setIsPaused(prev => !prev); };
+            const handleCancel = () => { triggerHaptic(); playSound('delete'); onComplete(); };
+            const formatTime = (seconds) => { const m = Math.floor(seconds / 60); const s = seconds % 60; return `${m}:${s < 10 ? '0' : ''}${s}`; };
+
+            if (currentPhaseIndex === -1) {
+                 return (
+                    <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center p-6 text-center" role="presentation" aria-label="Countdown to Start">
+                        <div className="text-xl font-bold text-gray-400 mb-8 uppercase tracking-widest" aria-hidden="true">Get Ready</div>
+                        <div className="text-[10rem] font-black text-white leading-none animate-pulse" aria-live="assertive">{timeLeft}</div>
+                        <button onClick={handleCancel} className="mt-12 text-red-400 font-bold px-6 py-3 border-2 border-slate-700 rounded-full hover:bg-slate-800">Cancel</button>
+                    </div>
+                );
+            }
+
+            if (isFinished) {
+                return (
+                    <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center p-6 text-center" role="presentation">
+                        <div className="bg-slate-700 p-6 rounded-full mb-6 animate-bounce"><Icons.Check size={64} className="text-white" /></div>
+                        <div className="text-2xl font-bold text-white mb-2" aria-live="polite">Workout Complete!</div>
+                    </div>
+                );
+            }
+
+            const currentPhase = phases[currentPhaseIndex];
+            const speedText = currentPhase.speed > 0 && (<div className="bg-slate-800 px-6 py-2 rounded-full border border-slate-600"><span className="text-gray-400 text-sm font-bold uppercase mr-2">Target Speed</span><span className="text-xl font-black text-white">{currentPhase.speed}</span></div>);
+
+            return (
+                <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col p-4" role="presentation">
+                    <div className="flex justify-between items-center mb-6">
+                        <button onClick={handleCancel} className="text-gray-400 font-bold px-4 py-2 border border-slate-700 rounded hover:bg-slate-800">Cancel & Return</button>
+                        <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Phase {currentPhaseIndex + 1} of {phases.length}</div>
+                    </div>
+                    <div className="flex-1 flex flex-col items-center justify-center space-y-6">
+                        {/* ACCESSIBILITY: The phase name updates, triggering aria-live to read the new phase. */}
+                        <div className="text-2xl font-bold text-white text-center" aria-live="assertive">Phase {currentPhaseIndex + 1}: {currentPhase.name}</div>
+                        {speedText}
+                        <div className="text-9xl font-black text-white font-mono tracking-tighter" aria-label={`${Math.floor(timeLeft / 60)} minutes ${timeLeft % 60} seconds remaining`} aria-live="off">{formatTime(timeLeft)}</div>
+                        {isPaused && <div className="px-4 py-2 bg-slate-700 text-gray-200 rounded font-bold uppercase tracking-widest animate-pulse" aria-live="polite">Paused</div>}
+                    </div>
+                    <div className="mt-auto pt-6 pb-8">
+                        <button onClick={togglePause} className={`w-full py-6 rounded-2xl font-bold text-2xl shadow-xl flex items-center justify-center gap-4 ${isPaused ? 'bg-slate-700 text-white' : 'bg-slate-700 text-white'}`} aria-label={isPaused ? "Resume Workout" : "Pause Workout"}>
+                            {isPaused ? <><Icons.Play size={32} /> Resume</> : <><Icons.Pause size={32} /> Pause</>}
+                        </button>
+                    </div>
                 </div>
+            );
+        }
 
-                <div class="info-box box-warning">
-                    <h3>Danger Zone</h3>
-                    <button class="nav-item" style="background-color:#400; border-color:red;" onclick="clearData()">🗑️ Clear All Data</button>
+        function AddExerciseForm({ onAdd, routine, availableExercises }) {
+            const [newExerciseName, setNewExerciseName] = useState('');
+            const [isCustom, setIsCustom] = useState(false);
+            const isExisting = availableExercises.some(ex => ex.toLowerCase() === newExerciseName.toLowerCase());
+            const isDisabled = !newExerciseName.trim();
+
+            const handleAdd = (e) => {
+                e.preventDefault();
+                if (isDisabled) return;
+                onAdd(newExerciseName.trim(), isCustom);
+                setNewExerciseName(''); setIsCustom(false);
+            };
+
+            const handleTextChange = (e) => {
+                const value = e.target.value;
+                setNewExerciseName(value);
+                // Automatically mark as custom if user starts typing and it's not an existing item
+                if (value && !isExisting) { setIsCustom(true); } else if (!value) { setIsCustom(false); }
+            };
+            
+            const handleSelectChange = (e) => {
+                setNewExerciseName(e.target.value); 
+                setIsCustom(false);
+            }
+
+            return (
+                <form onSubmit={handleAdd} className="bg-slate-700 p-4 rounded-lg shadow space-y-4 border border-slate-600">
+                    <div>
+                        <label htmlFor="select-exercise" className="block text-sm font-bold text-gray-400 mb-1">Select Existing Exercise for {routine}</label>
+                        <select id="select-exercise" className="w-full p-3 border border-slate-600 rounded text-lg font-bold bg-slate-800 text-white" value={isCustom ? '' : newExerciseName} onChange={handleSelectChange}>
+                            <option value="">Choose or Type Below (Relevant to {routine})...</option>
+                            {availableExercises.map(ex => <option key={ex} value={ex}>{ex}</option>)}
+                        </select>
+                    </div>
+                    <div className="border-t border-slate-600 pt-4">
+                        <label htmlFor="custom-exercise" className="block font-bold text-sm mb-1 text-gray-400">Or Add Custom Exercise</label>
+                        <input id="custom-exercise" type="text" value={newExerciseName} onChange={handleTextChange} placeholder="e.g., Landmine Squats" className="w-full p-3 text-lg border border-slate-600 rounded bg-slate-800 text-white"/>
+                    </div>
+                    <div className="flex items-center">
+                         <input id="is-custom-checkbox" type="checkbox" checked={isCustom} onChange={e => setIsCustom(e.target.checked)} className="w-4 h-4 text-slate-400 rounded focus:ring-slate-500 border-gray-300 bg-slate-800"/>
+                        <label htmlFor="is-custom-checkbox" className="ml-2 text-sm text-gray-400">Save as New Custom Exercise for {routine}</label>
+                    </div>
+                    <button type="submit" disabled={isDisabled} className="w-full py-3 bg-slate-500 text-white font-bold rounded-lg shadow hover:bg-slate-600 disabled:bg-slate-600 disabled:text-gray-400 flex items-center justify-center gap-2">
+                        <Icons.Plus size={20} /> Add Exercise
+                    </button>
+                </form>
+            );
+        }
+
+        function ExerciseItem({ exercise, isEditing, isLast, onEdit, onDelete, onUpdate, onComplete, onSkip, previousData, setAnnouncementText }) {
+            const nameRef = useRef(null);
+            const [confirmDelete, setConfirmDelete] = useState(false);
+            const [isTransitioning, setIsTransitioning] = useState(false);
+            
+            useEffect(() => { if (isEditing && nameRef.current) setTimeout(() => nameRef.current.focus(), 50); }, [isEditing]);
+
+            const contextualRecap = useMemo(() => {
+                if (!isEditing || !previousData) return null;
+                const { weight, time, sets, reps, notes } = previousData; 
+                const [w, t, s, r] = [parseFloat(weight) || 0, parseFloat(time) || 0, parseFloat(sets) || 0, parseFloat(reps) || 0];
+                let primaryInfo = '';
+                if (t > 0) primaryInfo = `Last time you did${s > 0 ? ` ${s} sets of` : ''} ${t} seconds.`;
+                else if (w > 0) primaryInfo = `Last time you did ${w} pounds${s > 0 ? ` for ${s} sets` : ''}${r > 0 ? ` of ${r} reps.` : '.'}`;
+                else if (s > 0 || r > 0) primaryInfo = `Last time you did${s > 0 ? ` ${s} sets` : ''}${(s > 0 && r > 0) ? ` and` : ''}${r > 0 ? ` ${r} reps.` : '.'}`.replace('and and', 'and');
+                if (!primaryInfo) return null;
+                let text = primaryInfo.trim();
+                // Include specific notes from the last session
+                if (notes) { if (!text.endsWith('.')) text += '.'; text += ` Previous session note: ${notes}`; }
+                return text;
+            }, [isEditing, previousData]);
+
+            const handleComplete = () => { 
+                if (isTransitioning) return;
+                setIsTransitioning(true); triggerHaptic(); playSound('success');
+                
+                const feedback = "Exercise completed.";
+
+                // ACCESSIBILITY: Use setAnnouncementText for visual/live region feedback
+                setAnnouncementText(feedback);
+                
+                const completeAndAdvance = () => {
+                    onComplete(exercise.id, exercise.name); 
+                    setTimeout(() => setIsTransitioning(false), 500);
+                };
+                
+                setTimeout(completeAndAdvance, 100); // Quick transition
+
+            };
+
+            const handleDelete = () => {
+                triggerHaptic(); 
+                if (confirmDelete) { playSound('delete'); onDelete(exercise.id, exercise.name); return; }
+                playSound('skip'); 
+                setConfirmDelete(true); 
+                setTimeout(() => setConfirmDelete(false), 3000); 
+            };
+
+            if (isEditing) {
+                return (
+                    <div className="bg-slate-800 p-4 rounded-lg shadow-xl border-4 border-slate-600 mb-6 relative text-white" role="presentation" aria-label={`Editing ${exercise.name}`}>
+                        <div className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                            <div>
+                                <div className="text-xl font-bold text-white focus:outline-none" ref={nameRef} tabIndex="0">{exercise.name}</div>
+                                {contextualRecap && (<div className="bg-slate-900 text-gray-300 px-3 py-3 rounded mt-2 text-sm font-bold border border-slate-700 leading-relaxed focus:outline-none" role="note" tabIndex="0" aria-label={`History: ${contextualRecap}`}>{contextualRecap}</div>)}
+                            </div>
+                            <button onClick={handleDelete} className={`p-3 rounded-lg transition-colors ${confirmDelete ? 'bg-slate-600 text-white font-bold' : 'text-gray-400 hover:bg-slate-700'}`} aria-label={`Delete ${exercise.name}`}>{confirmDelete ? "Confirm Delete" : <Icons.Trash2 size={24} />}</button>
+                        </div>
+                        <button onClick={() => onSkip(exercise)} className="w-full mb-6 py-4 bg-slate-700 text-gray-300 border border-slate-600 rounded-lg font-bold flex items-center justify-center gap-2 active:bg-slate-600" aria-label={`Skip ${exercise.name} for now`}>
+                            <span className="uppercase tracking-wide text-sm">Skip for now</span> <Icons.SkipForward size={20} />
+                        </button>
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <StaticInput id={`${exercise.id}-sets`} label="Sets" value={exercise.sets} onChange={v => onUpdate(exercise.id, 'sets', v)} inputMode="numeric" stepValue={1} />
+                            <StaticInput id={`${exercise.id}-reps`} label="Reps" value={exercise.reps} onChange={v => onUpdate(exercise.id, 'reps', v)} inputMode="numeric" stepValue={1} />
+                            <div className="col-span-2"><StaticInput id={`${exercise.id}-weight`} label="Weight" value={exercise.weight} onChange={v => onUpdate(exercise.id, 'weight', v)} inputMode="decimal" unit="pounds" stepValue={1} /></div>
+                            <div className="col-span-2"><StaticInput id={`${exercise.id}-time`} label="Time (Hold/Rest)" value={exercise.time} onChange={v => onUpdate(exercise.id, 'time', v)} inputMode="numeric" unit="seconds" stepValue={5} /></div>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex gap-2">
+                                <button onClick={handleComplete} disabled={isTransitioning} className={`w-full text-white py-5 rounded-lg font-bold text-xl shadow flex items-center justify-center gap-3 ${isLast ? 'bg-slate-600 hover:bg-slate-700' : 'bg-slate-600 hover:bg-slate-700'} ${isTransitioning ? 'opacity-50 cursor-not-allowed' : ''}`} aria-label={isTransitioning ? 'Processing...' : (isLast ? 'Finish Workout and Save' : 'Next Exercise')}>
+                                    {isTransitioning ? 'Processing...' : (isLast ? <><Icons.Check size={28} /> Finish</> : <><Icons.ArrowRight size={28} /> Next</>)}
+                                </button>
+                            </div>
+                            <hr className="border-slate-700" />
+                            <label htmlFor={`notes-${exercise.id}`} className="block text-sm font-bold text-gray-400 mb-1">Optional Notes</label>
+                            <textarea id={`notes-${exercise.id}`} aria-label="Notes" value={exercise.notes} onChange={(e) => onUpdate(exercise.id, 'notes', e.target.value)} className="w-full p-3 text-lg border border-slate-600 rounded bg-slate-700 focus:border-slate-600 focus:ring-4 focus:ring-slate-600/50 text-white" placeholder="" rows="2" />
+                        </div>
+                    </div>
+                );
+            }
+            const isSaved = exercise.isCompleted; 
+            const statusColor = isSaved ? "border-l-4 border-slate-500 bg-slate-800" : "border border-slate-700 bg-slate-800 opacity-70"; 
+            const statusText = isSaved ? `Saved` : "Not Completed"; 
+            
+            const summaryParts = [];
+            if (exercise.sets) summaryParts.push(`${exercise.sets} sets`);
+            if (exercise.reps) summaryParts.push(`${exercise.reps} reps`);
+            if (exercise.weight) summaryParts.push(`${exercise.weight} pounds`);
+            if (exercise.time) summaryParts.push(`${exercise.time} sec`);
+            const summaryText = summaryParts.filter(Boolean).join(', ');
+
+            const fullSummaryLabel = `${exercise.name}. ${summaryText}. Status: ${statusText}. Tap to edit or view details.`;
+            
+            return (
+                <li className={`p-4 rounded-lg shadow-sm mb-3 flex justify-between items-center list-none ${statusColor}`}
+                    role="button" 
+                    tabIndex="0"
+                    aria-label={fullSummaryLabel}
+                    onClick={() => {triggerHaptic(); onEdit(exercise.id)}}
+                >
+                    <div className="flex-grow pr-4" aria-hidden="true">
+                        <div className="text-lg font-bold text-gray-200">{exercise.name}</div>
+                        <div className="flex flex-col">
+                            <span className="text-gray-400 font-medium">{summaryText}</span>
+                            <span className={`text-xs font-bold uppercase tracking-wide mt-1 ${isSaved ? 'text-gray-300' : 'text-gray-500'}`}>Status: {statusText}</span>
+                        </div>
+                    </div>
+                    <div aria-hidden="true" className="p-3 bg-slate-700 text-white rounded-lg border border-slate-600 hover:bg-slate-600 min-h-[44px] min-w-[44px]">
+                        <Icons.Edit2 size={20} />
+                    </div>
+                </li>
+            );
+        }
+
+        function SplashScreen({ onGoToMenu, onBonus, routine, history, currentSession, onJumpToCardio, onJumpToWeights, onChangeRoutine, onLogRest, setAnnouncementText }) {
+            useEffect(() => { const loader = document.getElementById('loading-screen'); if(loader) loader.style.display = 'none'; }, []);
+            
+            const { progress, allDone, isStrengthDoneToday } = useMemo(() => {
+                const todayStr = new Date().toLocaleDateString();
+                const todayEntries = history.filter(h => new Date(h.date).toLocaleDateString() === todayStr);
+
+                const checkStatus = (activity) => {
+                    const entry = todayEntries.find(h => h.isCardio && h.activity === activity);
+                    return entry ? (entry.isRest ? 'rest' : 'done') : 'not_completed';
+                };
+
+                const strengthEntry = todayEntries.find(h => !h.isCardio && !h.isBonus && !h.isVital);
+                let weightsStatus = strengthEntry ? (strengthEntry.isRest ? 'rest' : 'done') : (currentSession?.length > 0 ? 'progress' : 'not_completed');
+
+                const etpRuns = ['Endurance Run', 'Tempo Run', 'Progressive Run'];
+                const etpCompleted = todayEntries.some(h => h.isCardio && etpRuns.includes(h.activity) && !h.isRest);
+                const etpRested = todayEntries.some(h => h.isCardio && etpRuns.includes(h.activity) && h.isRest);
+                let etpStatus = 'not_completed';
+                if (etpCompleted) etpStatus = 'done';
+                else if (etpRested) etpStatus = 'rest';
+                
+                const p = {
+                    hiit: checkStatus('HIIT Run'), cycle: checkStatus('Indoor Cycle'), endurance: etpStatus, incline: checkStatus('Incline Walk'), weights: weightsStatus
+                };
+
+                const count = Object.values(p).filter(s => s === 'done' || s === 'rest').length;
+                return { progress: p, allDone: count >= 5, isStrengthDoneToday: weightsStatus === 'done' || weightsStatus === 'rest' };
+            }, [history, currentSession]);
+
+            const [isRestMode, setIsRestMode] = useState(false);
+
+            const StatusIcon = ({ status }) => {
+                if (status === 'done') return <span aria-label="Completed"><Icons.CheckCircle className="text-white" /></span>;
+                if (status === 'rest') return <span aria-label="Rest Day"><Icons.Moon className="text-gray-300" /></span>;
+                if (status === 'progress') return <span aria-label="In Progress"><Icons.Hourglass className="text-gray-400 animate-pulse" /></span>;
+                return <span aria-label="Not Completed"><Icons.Circle className="text-gray-500" /></span>;
+            };
+
+            const InteractiveRow = ({ label, status, onClick, onRestClick }) => {
+                 const handleInteraction = () => {
+                    triggerHaptic();
+                    if (isRestMode) {
+                        if (status !== 'not_completed') {
+                            playSound('skip');
+                            setAnnouncementText(`Cannot log rest. ${label} is already logged.`);
+                        } else { onRestClick(); }
+                    } else { onClick(); }
+                };
+
+                return (
+                    <button 
+                        onClick={handleInteraction}
+                        className={`w-full flex items-center justify-between p-2 rounded text-left active:bg-slate-600 transition-colors ${isRestMode ? 'bg-slate-800 border border-slate-600 hover:bg-slate-700' : 'hover:bg-slate-700'}`}
+                        aria-label={`${isRestMode ? 'Mark as Rest' : 'Log'} ${label}, Status: ${status === 'not_completed' ? 'Not Completed' : status}`}
+                    >
+                        <span className="flex items-center gap-2 text-base">
+                            {label}
+                            {isRestMode && <span className="text-xs font-bold bg-slate-700 px-2 py-0.5 rounded text-gray-200 ml-2">REST</span>}
+                        </span>
+                        <StatusIcon status={status} />
+                    </button>
+                );
+            };
+
+            return (
+                <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col p-6 overflow-y-auto">
+                    <div className="flex justify-between w-full mb-6">
+                        <button onClick={() => { triggerHaptic(); onGoToMenu(); }} className="p-3 bg-slate-800 rounded hover:bg-slate-700 flex items-center gap-2 font-bold" aria-label="Skip to Main Menu">
+                            <Icons.SkipForward size={20} /> Skip to Main Menu
+                        </button>
+                    </div>
+
+                    <div className="flex-1 flex flex-col justify-center space-y-8">
+                        <div 
+                            aria-label={`Welcome to ${APP_NAME} version ${VERSION}. Today is ${formatDate(new Date())}. Your main strength focus is the ${routine} routine.`} 
+                            tabIndex="0"
+                            role="presentation"
+                            className="space-y-1 bg-slate-800 p-4 rounded-lg border-2 border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <div className="text-2xl font-bold text-white" aria-hidden="true">
+                                Welcome to {APP_NAME} v{VERSION}!
+                            </div>
+                            <div className="text-slate-400 text-lg font-medium" aria-hidden="true">
+                                Today: {formatDate(new Date())}
+                            </div>
+                            <div className="text-white text-xl font-extrabold uppercase tracking-wide mt-1" aria-hidden="true">
+                                Today's Strength Focus: {routine}
+                            </div>
+                        </div>
+
+                        <div className="mt-4 flex flex-col gap-4">
+                            {!isStrengthDoneToday && !isRestMode && (
+                                <select 
+                                    id="change-focus" 
+                                    onChange={(e) => { triggerHaptic(); onChangeRoutine(e.target.value); }} 
+                                    value={routine} 
+                                    className="bg-slate-800 text-white border border-slate-600 rounded px-3 py-3 text-sm font-bold w-full" 
+                                    aria-label="Change Focus for Strength Training"
+                                >
+                                    <option value="Upper Body">Change Focus: Upper Body</option>
+                                    <option value="Lower Body">Change Focus: Lower Body</option>
+                                    <option value="Core">Change Focus: Core</option>
+                                </select>
+                            )}
+                            
+                            <div className="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700 w-full">
+                                <span className="text-sm font-bold text-gray-300">Rest Mode</span>
+                                <button 
+                                    role="switch" 
+                                    aria-checked={isRestMode}
+                                    onClick={() => { triggerHaptic(); setIsRestMode(!isRestMode); }}
+                                    className={`w-12 h-6 rounded-full relative transition-colors ${isRestMode ? 'bg-slate-600' : 'bg-gray-600'}`}
+                                    aria-label="Toggle Rest Mode"
+                                >
+                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${isRestMode ? 'left-7' : 'left-1'}`}></div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className={`space-y-6 transition-opacity ${isRestMode ? 'opacity-90' : 'opacity-100'}`}>
+                            {isRestMode && <div className="text-center text-gray-300 font-bold animate-pulse" role="alert">Tap an item to mark as REST DAY</div>}
+                            
+                            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700" role="presentation">
+                                <div className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4" role="presentation">Morning Session</div>
+                                <div className="space-y-3 text-lg font-medium">
+                                    <InteractiveRow label="HIIT Run" status={progress.hiit} onClick={() => onJumpToCardio('HIIT Run')} onRestClick={() => onLogRest('HIIT Run', 'Cardio')} />
+                                    <InteractiveRow label="Indoor Cycle" status={progress.cycle} onClick={() => onJumpToCardio('Indoor Cycle')} onRestClick={() => onLogRest('Indoor Cycle', 'Cardio')} />
+                                </div>
+                            </div>
+                            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700" role="presentation">
+                                <div className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4" role="presentation">Afternoon Session</div>
+                                <div className="space-y-3 text-lg font-medium">
+                                    <InteractiveRow label={`${routine} Focus`} status={progress.weights} onClick={() => onJumpToWeights(routine)} onRestClick={() => onLogRest(routine, 'Strength')} />
+                                    <InteractiveRow label="ETP Run" status={progress.endurance} onClick={() => onJumpToCardio('ETP Run')} onRestClick={() => onLogRest('ETP Run', 'Cardio')} />
+                                    <InteractiveRow label="Incline Walk" status={progress.incline} onClick={() => onJumpToCardio('Incline Walk')} onRestClick={() => onLogRest('Incline Walk', 'Cardio')} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 space-y-3">
+                         {allDone && (
+                            <button onClick={() => { triggerHaptic(); playSound('success'); onBonus(); }} className="w-full text-white font-bold text-xl py-6 rounded-xl shadow-lg active:scale-95 transition-transform bg-slate-700 hover:bg-slate-600">
+                                I'm feeling extra good today! 🎉
+                            </button>
+                         )}
+                    </div>
                 </div>
-            </div>
-        `;
-    }
+            );
+        }
 
-    // Initialize
-    renderMenu();
-</script>
+        function LuckyView({ onBack, onSave, availableExercises, history }) {
+            const [exercise, setExercise] = useState(null);
+            const [sets, setSets] = useState('3');
+            const [reps, setReps] = useState('10');
+            const [weight, setWeight] = useState('');
+            const mysteryRef = useRef(null);
+            
+            const pickRandom = () => {
+                const randomName = availableExercises[Math.floor(Math.random() * availableExercises.length)];
+                let lastData = { sets: '3', reps: '10', weight: '' };
+                for (let i = history.length - 1; i >= 0; i--) {
+                    const entry = history[i];
+                    if (entry.isCardio || entry.isVital || entry.isRest || !entry.exercises || entry.exercises.length === 0) continue; 
+                    const pastExercise = entry.exercises.find(e => e.name.toLowerCase() === randomName.toLowerCase());
+                    if (pastExercise) { lastData = { sets: String(pastExercise.sets || '3'), reps: String(pastExercise.reps || '10'), weight: String(pastExercise.weight || '') }; break; }
+                }
+                setExercise(randomName); setSets(lastData.sets); setReps(lastData.reps); setWeight(lastData.weight);
+                setTimeout(() => { if(mysteryRef.current) mysteryRef.current.focus(); }, 100);
+            };
+            useEffect(() => { pickRandom(); }, []);
 
+            const handleSpin = (isExit) => { 
+                triggerHaptic(); playSound('success'); 
+                onSave({ type: 'Strength', name: exercise, sets, reps, weight }); 
+                if (isExit) onBack(); else pickRandom(); 
+            };
+            
+            if (!exercise) return <div className="p-8 text-center font-bold text-white">Spinning...</div>;
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-slate-700 text-white p-6 rounded-lg shadow-lg text-center border-4 border-slate-600"><div role="presentation" ref={mysteryRef} tabIndex="-1" className="text-xl font-extrabold uppercase mb-1 focus:outline-none">Mystery Exercise: {exercise}</div></div>
+                    <div className="bg-slate-800 text-white p-6 rounded-lg shadow-xl border-t-8 border-slate-600 space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><StaticInput id="l-sets" label="Sets" value={sets} onChange={setSets} inputMode="numeric" stepValue={1} /></div>
+                            <div><StaticInput id="l-reps" label="Reps" value={reps} onChange={setReps} inputMode="numeric" stepValue={1} /></div>
+                            <div className="col-span-2"><StaticInput id="l-weight" label="Weight" value={weight} onChange={setWeight} inputMode="decimal" unit="pounds" stepValue={1} /></div>
+                        </div>
+                        <div className="flex flex-col gap-3 pt-2">
+                            <button onClick={() => handleSpin(false)} className="w-full py-5 bg-slate-600 text-white font-bold text-xl rounded-lg shadow-lg hover:bg-slate-700 border-b-4 border-slate-800 active:border-b-0 active:mt-1">🎲 Spin Again (Save & Next)</button>
+                            <button onClick={() => handleSpin(true)} className="w-full py-4 bg-slate-700 text-gray-200 font-bold text-lg rounded-lg hover:bg-slate-600">🏁 Cash Out (Save & Exit)</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function ETPMenuView({ onBack, onSelect }) {
+            const ETP_OPTIONS = [
+                { label: 'Endurance Run', memo: 'Saturday, Sunday, and Monday', handler: () => onSelect('Endurance Run') },
+                { label: 'Tempo Run', memo: 'Wednesday and Friday', handler: () => onSelect('Tempo Run') },
+                { label: 'Progressive Run', memo: 'Tuesday and Thursday', handler: () => onSelect('Progressive Run') },
+            ];
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4"><button onClick={() => { playSound('click'); onBack(); }} className="text-gray-400 font-bold flex items-center gap-1 p-2 bg-slate-700 rounded hover:bg-slate-600"><Icons.ArrowLeft size={20} /> Back to Menu</button><div role="presentation" className="text-xl font-bold text-white">ETP Run Type</div></div>
+                    <div className="space-y-4">
+                        {ETP_OPTIONS.map(opt => (
+                            <button key={opt.label} onClick={() => { triggerHaptic(); opt.handler(); }} 
+                                className={`w-full p-6 bg-slate-700 text-white rounded-xl shadow-lg font-bold text-xl flex flex-col items-start active:scale-[.99] transition-transform border border-slate-600`}>
+                                <span className="flex items-center justify-between w-full">{opt.label} <Icons.ArrowRight size={28} /></span>
+                                <span className="text-sm font-medium text-gray-400 mt-1">Memo: {opt.memo}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function VitalsView({ history, onSave }) {
+            const MEASUREMENTS = [
+                { id: 'waist', label: 'Waist Circumference', step: 0.5, col: 2 },
+                { id: 'chest', label: 'Chest Circumference', step: 0.5, col: 1 },
+                { id: 'biceps', label: 'Biceps Circumference', step: 0.5, col: 1 },
+                { id: 'thigh', label: 'Thigh Circumference', step: 0.5, col: 2 },
+            ];
+            const [vitals, setVitals] = useState({ age: '', height: '', weight: '', waist: '', chest: '', biceps: '', thigh: '', notes: '' });
+            
+            const handleChange = (field, value) => { 
+                let cleanedValue = value.replace(/[^\d.]/g, ''); 
+                if (field === 'age' || field === 'height') cleanedValue = cleanedValue.split('.')[0] || ''; 
+                setVitals(prev => ({ ...prev, [field]: cleanedValue })); 
+            };
+            
+            useEffect(() => { const lastVital = history.slice().reverse().find(h => h.isVital); if (lastVital?.metrics) { setVitals(prev => ({ ...prev, ...lastVital.metrics })); } }, [history]);
+            const bmiData = calculateBMI(vitals.weight, vitals.height);
+            const mhrData = calculateMHR(vitals.age);
+            const handleSave = () => { triggerHaptic(); playSound('success'); onSave({ ...vitals, heightSnapshot: vitals.height, ageSnapshot: vitals.age }); };
+            
+            return (
+                <div className="space-y-6">
+                    <div className="bg-slate-800 text-white p-4 rounded-lg shadow text-center border border-slate-700"><div role="presentation" className="font-extrabold text-xl text-white uppercase flex items-center justify-center gap-2"><Icons.Heart size={24} className="text-gray-400" /> Vitals & Body Composition</div></div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><StaticInput id="v-age" label="Age" value={vitals.age} onChange={v => handleChange('age', v)} inputMode="numeric" unit="years" stepValue={1}/></div>
+                        <div><StaticInput id="v-height" label="Height" value={vitals.height} onChange={v => handleChange('height', v)} inputMode="numeric" unit="inches" stepValue={1}/></div>
+                        <div className="col-span-2"><StaticInput id="v-weight" label="Weight" value={vitals.weight} onChange={v => handleChange('weight', v)} inputMode="decimal" unit="pounds" stepValue={1} /></div>
+                    </div>
+                    <div className="bg-slate-900 p-4 rounded-xl border-4 border-slate-700 text-center">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div aria-label={`Body Mass Index: ${bmiData.val}. Status: ${bmiData.status}`}><p className="text-xs font-bold text-gray-400 uppercase tracking-wider">BMI</p><p className="text-2xl font-black text-white">{bmiData.val}</p><p className="text-xs font-bold text-gray-300">{bmiData.status}</p></div>
+                            <div className="border-l border-slate-800 pl-2" aria-label={`Maximum Heart Rate. Fox formula: ${mhrData.fox} bpm. Tanaka formula: ${mhrData.tanaka} bpm.`}><p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Maximum Heart Rate</p><div className="text-sm font-bold text-white mt-1 text-left"><p>Fox: {mhrData.fox}</p><p>Tanaka: {mhrData.tanaka}</p></div></div>
+                        </div>
+                    </div>
+                    <div className="bg-slate-800 p-6 rounded-lg shadow-xl space-y-6 border border-slate-700">
+                        <div className="font-bold text-gray-400 uppercase text-sm border-b border-slate-700 pb-2" role="presentation">Body Measurements (inches)</div>
+                        <div className="grid grid-cols-2 gap-4">
+                            {MEASUREMENTS.map(m => (
+                                <div key={m.id} className={`col-span-${m.col === 2 ? 2 : 1}`}>
+                                    <StaticInput id={`v-${m.id}`} label={m.label} value={vitals[m.id]} onChange={v => handleChange(m.id, v)} inputMode="decimal" unit="inches" stepValue={m.step} />
+                                </div>
+                            ))}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-400 mb-1">Notes</label>
+                            <textarea value={vitals.notes} onChange={e => handleChange('notes', e.target.value)} className="w-full p-3 text-lg border border-slate-600 rounded bg-slate-700 text-white" rows="2" aria-label="Notes on Vitals" />
+                        </div>
+                        <button onClick={handleSave} className="w-full py-5 bg-slate-600 text-white font-bold text-xl rounded-lg shadow-lg hover:bg-slate-700">Save Vitals</button>
+                    </div>
+                </div>
+            );
+        }
+
+        function BonusView({ onBack, onSaveBonus, availableExercises, history, onStartLucky }) {
+            const [subMode, setSubMode] = useState('menu'); 
+            const [note, setNote] = useState('');
+            const [strengthForm, setStrengthForm] = useState({ name: '', sets: '', reps: '', weight: '' });
+            const [cardioActivity, setCardioActivity] = useState(''); 
+            const sessionHistoryMemo = useMemo(() => history.filter(h => h.isBonus && new Date(h.date).toLocaleDateString() === new Date().toLocaleDateString()), [history]);
+            const handleBonusCardioSave = (activity, metrics) => { onSaveBonus({ type: 'Cardio', name: activity, ...metrics }); setSubMode('menu'); };
+            const handleStrengthSave = (e) => { e.preventDefault(); if(!strengthForm.name) return; onSaveBonus({ type: 'Strength', ...strengthForm }); setStrengthForm({ name: '', sets: '', reps: '', weight: '' }); setSubMode('menu'); };
+            const CARDIO_TYPES = ['HIIT Run', 'Indoor Cycle', 'ETP Run', 'Incline Walk', 'Treadmill Walk', 'Elliptical'];
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-slate-800 text-white p-4 rounded-lg shadow text-center border border-slate-700"><div role="presentation" className="font-extrabold text-xl text-white uppercase">Bonus Zone</div></div>
+                    <div className="bg-slate-900 p-4 rounded-lg border border-slate-700"><label className="block text-sm font-bold text-gray-400 mb-1">Bonus Session Note</label><textarea value={note} onChange={e => setNote(e.target.value)} placeholder="" className="w-full p-3 border border-slate-700 rounded bg-slate-800 text-white" rows="2" /></div>
+                    {subMode === 'menu' && (
+                        <div className="space-y-4">
+                            <div className="bg-slate-800 text-white p-4 rounded-lg shadow border border-slate-700" role="presentation"><div className="font-bold text-lg text-gray-400 mb-2 border-b border-slate-700 pb-2">Today's Extra Work</div>{sessionHistoryMemo.length === 0 ? <p className="text-gray-500 italic">Nothing added yet.</p> : (<ul className="list-disc pl-5 space-y-1">{sessionHistoryMemo.map((item, i) => (<li key={i} className="text-gray-300"><span className="font-bold">{item.isCardio ? 'Cardio' : 'Strength'}:</span> {item.isCardio ? item.activity : (item.exercises?.[0]?.name || 'Unknown Exercise')}</li>))}</ul>)}</div>
+                            <button onClick={() => { triggerHaptic(); onStartLucky(); }} className="w-full p-6 bg-slate-600 text-white rounded-xl shadow-lg font-bold text-xl flex items-center justify-center gap-3 border-b-4 border-slate-800 active:border-b-0 active:mt-1"><span className="text-2xl">🎲</span> I'm Feeling Lucky</button>
+                            <button onClick={() => { triggerHaptic(); setSubMode('cardio'); }} className="w-full p-6 bg-slate-600 text-white rounded-xl shadow-lg font-bold text-xl flex items-center justify-center gap-3"><Icons.Activity size={28} /> Add Bonus Cardio</button>
+                            <button onClick={() => { triggerHaptic(); setSubMode('strength'); }} className="w-full p-6 bg-slate-600 text-white rounded-xl shadow-lg font-bold text-xl flex items-center justify-center gap-3"><Icons.Dumbbell size={28} /> Add Bonus Strength</button>
+                        </div>
+                    )}
+                    {subMode === 'cardio' && <div className="bg-slate-800 text-white p-4 rounded-lg shadow-xl border-t-8 border-slate-600"><div className="flex justify-between items-center mb-4"><button onClick={() => { playSound('click'); setSubMode('menu'); }} className="text-gray-400 font-bold flex items-center gap-1"><Icons.ArrowLeft size={20}/> Back</button><div role="presentation" className="text-xl font-bold text-white">Add Bonus Cardio</div></div><div className="space-y-4">{CARDIO_TYPES.map(type => (<button key={type} onClick={() => { triggerHaptic(); setCardioActivity(type); }} className="w-full p-4 text-left border border-slate-700 rounded-lg font-bold hover:bg-slate-700 flex justify-between">{type} <Icons.ArrowRight size={20} /></button>))}</div></div>}
+                    {subMode === 'cardio' && cardioActivity && <div className="fixed inset-0 bg-slate-900 z-50 p-4 overflow-y-auto"><CardioForm history={history} onSave={(activity, metrics) => { handleBonusCardioSave(activity, metrics); setCardioActivity(''); }} onCancel={() => { playSound('delete'); setCardioActivity(''); setSubMode('menu'); }} /></div>}
+                    {subMode === 'strength' && (
+                        <form onSubmit={handleStrengthSave} className="bg-slate-800 text-white p-6 rounded-lg shadow-xl border-t-8 border-slate-600 border border-slate-700">
+                            <div className="flex justify-between items-center mb-4"><button type="button" onClick={() => { playSound('click'); setSubMode('menu'); }} className="text-gray-400 font-bold flex items-center gap-1"><Icons.ArrowLeft size={20}/> Back</button><div role="presentation" className="text-xl font-bold text-white">Add Bonus Strength</div></div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block font-bold text-sm mb-1 text-gray-400">Exercise</label>
+                                    <select className="w-full p-3 border border-slate-600 rounded text-lg font-bold bg-slate-700 text-white" value={strengthForm.name} onChange={e => setStrengthForm({...strengthForm, name: e.target.value})}>
+                                        <option value="">Select Exercise...</option>
+                                        {availableExercises.map(ex => <option key={ex} value={ex}>{ex}</option>)}
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><StaticInput id="b-sets" label="Sets" value={strengthForm.sets} onChange={v => setStrengthForm({...strengthForm, sets:v})} inputMode="numeric" stepValue={1}/></div>
+                                    <div><StaticInput id="b-reps" label="Reps" value={strengthForm.reps} onChange={v => setStrengthForm({...strengthForm, reps:v})} inputMode="numeric" stepValue={1}/></div>
+                                    <div className="col-span-2"><StaticInput id="b-weight" label="Weight" value={strengthForm.weight} onChange={v => setStrengthForm({...strengthForm, weight:v})} inputMode="decimal" unit="pounds" stepValue={1}/></div>
+                                </div>
+                                <div className="flex gap-3 pt-4"><button type="submit" className="w-full py-3 bg-slate-600 text-white font-bold rounded-lg shadow hover:bg-slate-700">Save Bonus</button></div>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            );
+        }
+
+        function TodayHistoryView({ history, onUpdateEntry, onDeleteEntry, onBack, announce }) {
+            const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+            const [editingId, setEditingId] = useState(null);
+            const [editForm, setEditForm] = useState({});
+
+            const todayEntries = useMemo(() => {
+                const startOfToday = new Date();
+                startOfToday.setHours(0, 0, 0, 0);
+                return history.filter(item => new Date(item.date) >= startOfToday).sort((a, b) => new Date(b.date) - new Date(a.date));
+            }, [history]);
+
+            const handleDelete = (id) => {
+                triggerHaptic();
+                if (confirmDeleteId === id) {
+                    onDeleteEntry(id);
+                    setConfirmDeleteId(null);
+                    playSound('delete');
+                    announce("Entry deleted successfully.");
+                } else {
+                    setConfirmDeleteId(id);
+                    playSound('skip');
+                    announce("Confirm deletion by tapping again.");
+                    setTimeout(() => setConfirmDeleteId(null), 3000);
+                }
+            };
+
+            const startEdit = (entry) => {
+                triggerHaptic();
+                setEditingId(entry.id);
+                setEditForm({ 
+                    notes: entry.metrics?.notes || '', 
+                    effort: entry.metrics?.effort || entry.overallEffort || '5' 
+                });
+                announce(`Editing entry.`);
+            };
+
+            const saveEdit = (id) => {
+                const original = history.find(h => h.id === id);
+                const updated = { 
+                    ...original, 
+                    metrics: original.metrics ? { ...original.metrics, ...editForm } : undefined,
+                    overallEffort: original.overallEffort !== undefined ? editForm.effort : undefined
+                };
+                onUpdateEntry(updated);
+                setEditingId(null);
+                playSound('success');
+                announce("Changes saved.");
+            };
+
+            const formatEntryDetails = (entry) => {
+                if (entry.isCardio) return `${entry.activity}: ${entry.metrics.duration} mins, Effort ${entry.metrics.effort}/10.`;
+                if (entry.isVital) return `Vitals Log: Weight ${entry.metrics.weight} lbs.`;
+                if (entry.isRest) return `Rest Day: ${entry.routine || entry.activity}.`;
+                return `${entry.routine} Session: ${entry.exercises?.length || 0} exercises, Total Volume ${entry.totalVolume || 0} lbs.`;
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <button onClick={onBack} className="text-gray-400 font-bold flex items-center gap-1 p-2 bg-slate-700 rounded hover:bg-slate-600" aria-label="Back to Main Menu">
+                            <Icons.ArrowLeft size={20} /> Back
+                        </button>
+                        <h2 className="text-xl font-bold text-white">Today's Activity</h2>
+                    </div>
+
+                    {todayEntries.length === 0 ? (
+                        <div className="p-8 text-center bg-slate-800 rounded-lg border border-slate-700 text-gray-400 font-bold" role="status">
+                            No entries found for today yet.
+                        </div>
+                    ) : (
+                        <ul className="space-y-4 p-0 list-none">
+                            {todayEntries.map(entry => {
+                                const isEditing = editingId === entry.id;
+                                const details = formatEntryDetails(entry);
+                                const timeStr = new Date(entry.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                                return (
+                                    <li key={entry.id} className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-md">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{timeStr}</span>
+                                                <div className="text-lg font-bold text-white mt-1" role="text" aria-label={`Entry at ${timeStr}: ${details}`}>{details}</div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => isEditing ? saveEdit(entry.id) : startEdit(entry)}
+                                                    className={`p-3 rounded-lg ${isEditing ? 'bg-green-600' : 'bg-slate-700'} text-white`}
+                                                    aria-label={isEditing ? "Save changes" : "Edit entry details"}
+                                                >
+                                                    {isEditing ? <Icons.Check size={20} /> : <Icons.Edit2 size={20} />}
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDelete(entry.id)}
+                                                    className={`p-3 rounded-lg ${confirmDeleteId === entry.id ? 'bg-red-600' : 'bg-slate-700'} text-white`}
+                                                    aria-label={confirmDeleteId === entry.id ? "Confirm deletion" : "Delete entry"}
+                                                >
+                                                    <Icons.Trash2 size={20} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {isEditing && (
+                                            <div className="mt-4 p-3 bg-slate-900 rounded-lg border border-slate-600 space-y-4" role="group" aria-label="Editing entry">
+                                                <StaticInput 
+                                                    id={`edit-effort-${entry.id}`} 
+                                                    label="Effort Score (1-10)" 
+                                                    value={editForm.effort} 
+                                                    onChange={v => setEditForm(prev => ({...prev, effort: v}))} 
+                                                    inputMode="numeric" stepValue={1}
+                                                />
+                                                <div>
+                                                    <label htmlFor={`edit-notes-${entry.id}`} className="block text-sm font-bold text-gray-400 mb-1">Notes</label>
+                                                    <textarea 
+                                                        id={`edit-notes-${entry.id}`} 
+                                                        value={editForm.notes} 
+                                                        onChange={e => setEditForm(prev => ({...prev, notes: e.target.value}))} 
+                                                        className="w-full p-3 bg-slate-800 border border-slate-600 rounded text-white" 
+                                                        rows="2"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {!isEditing && (entry.metrics?.notes || entry.notes) && (
+                                            <div className="mt-2 text-sm text-gray-400 italic bg-slate-900/50 p-2 rounded">
+                                                Note: {entry.metrics?.notes || entry.notes}
+                                            </div>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </div>
+            );
+        }
+
+        function CardioForm({ history, onSave, onCancel, initialActivity }) {
+            const T_SEGMENTS = [{ name: 'Warm Up', dur: 'warmupDur', spd: 'warmupSpd' }, { name: 'Tempo', dur: 'tempoDur', spd: 'tempoSpd' }, { name: 'Cool Down', dur: 'cooldownDur', spd: 'cooldownSpd' }];
+            const P_SEGMENTS = [{ name: 'Base', dur: 'progBaseDur', spd: 'progBaseSpd' }, { name: 'Build', dur: 'progBuildDur', spd: 'progBuildSpd' }, { name: 'Finish', dur: 'progFinishDur', spd: 'progFinishSpd' }];
+            const [activity, setActivity] = useState(initialActivity || '');
+            const [showEtpMenu, setShowEtpMenu] = useState(false);
+            const [activeRunConfig, setActiveRunConfig] = useState(null); 
+            const [formData, setFormData] = useState({ 
+                duration: '20', speedEasy: '', speedMod: '', speedHard: '', speedAllOut: '', 
+                intensity: '', avgSpeed: '', minIncline: '', maxIncline: '', notes: '', effort: '5', 
+                isGuided: false, 
+                warmupDur: '10', warmupSpd: '', tempoDur: '20', tempoSpd: '', cooldownDur: '10', cooldownSpd: '', 
+                inclinePct: '', avgHR: '', maxHR: '', 
+                progBaseDur: '10', progBaseSpd: '', progBuildDur: '10', progBuildSpd: '', progFinishDur: '10', progFinishSpd: '' 
+            });
+            const durationRef = useRef(null);
+            
+            const calcStats = (segments) => useMemo(() => {
+                const totalDur = segments.reduce((sum, seg) => sum + (parseFloat(formData[seg.dur]) || 0), 0);
+                let totalDist = segments.reduce((sum, seg) => sum + ((parseFloat(formData[seg.dur]) || 0) / 60 * (parseFloat(formData[seg.spd]) || 0)), 0);
+                const avgSpd = totalDur > 0 ? (totalDist / (totalDur / 60)).toFixed(1) : '0.0';
+                return { totalDur, avgSpd };
+            }, [formData, activity]);
+            
+            const tempoStats = calcStats(T_SEGMENTS);
+            const progStats = calcStats(P_SEGMENTS);
+            const lastSession = useMemo(() => history.slice().reverse().find(h => h.isCardio && h.activity === activity), [activity, history]);
+            const handleQuickLog = () => { if (!lastSession?.metrics) return; const payload = { ...lastSession.metrics, notes: '', effort: '5' }; triggerHaptic(); playSound('success'); onSave(activity, payload); };
+
+            useEffect(() => { 
+                if (activity) { 
+                    setFormData(prev => ({ ...prev, ...(lastSession?.metrics || { duration: '20', notes: '', effort: '5', isGuided: false }) })); 
+                    setTimeout(() => durationRef.current?.focus(), 100); 
+                } 
+            }, [activity, lastSession]);
+
+            useWakeLock(!!activeRunConfig);
+
+            const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+            const handleSubmit = (e) => { 
+                e.preventDefault(); 
+                if (!activity) return; 
+                triggerHaptic(); playSound('success'); 
+                let finalData = { ...formData }; 
+                if (activity === 'Tempo Run') { finalData.duration = String(tempoStats.totalDur); finalData.avgSpeed = tempoStats.avgSpd; } 
+                if (activity === 'Progressive Run') { finalData.duration = String(progStats.totalDur); finalData.avgSpeed = progStats.avgSpd; } 
+                onSave(activity, finalData); 
+            };
+
+            const startActiveRun = () => {
+                triggerHaptic();
+                let phases = [];
+                if (activity === 'Tempo Run') phases = T_SEGMENTS.map(s => ({ name: s.name, durationMinutes: parseFloat(formData[s.dur]) || 0, speed: formData[s.spd] }));
+                else if (activity === 'Progressive Run') phases = P_SEGMENTS.map(s => ({ name: s.name, durationMinutes: parseFloat(formData[s.dur]) || 0, speed: formData[s.spd] }));
+                if (phases.length > 0) setActiveRunConfig({ phases, type: activity });
+            };
+            
+            const renderSegmentInputs = (segments, statName) => {
+                const stat = statName === 'tempo' ? tempoStats : progStats;
+
+                const SegmentSwipeHandler = ({ segment, children }) => {
+                    const durationId = `tm-${segment.dur}`;
+                    const speedId = `tm-${segment.spd}`;
+                    const isSteppable = true;
+                    const [touchStart, setTouchStart] = useState(null);
+                    
+                    const getFocusedInput = () => {
+                        const activeEl = document.activeElement;
+                        if (activeEl?.id === durationId) return { id: durationId, field: segment.dur, step: 1 };
+                        if (activeEl?.id === speedId) return { id: speedId, field: segment.spd, step: 0.1 };
+                        return null;
+                    };
+
+                    const handleSegmentStep = (direction) => {
+                        const focused = getFocusedInput();
+                        if (!focused) {
+                            const durationEl = document.getElementById(durationId);
+                            if (durationEl) durationEl.focus();
+                            const numVal = parseFloat(formData[segment.dur]) || 0;
+                            const newValue = direction === 'up' ? numVal + 1 : Math.max(0, numVal - 1);
+                            handleChange(segment.dur, newValue.toFixed(0)); 
+                            return;
+                        }
+                        
+                        let numVal = parseFloat(formData[focused.field]) || 0;
+                        const stepValue = focused.step;
+                        let newValue = direction === 'up' ? numVal + stepValue : Math.max(0, numVal - stepValue);
+
+                        const precision = stepValue.toString().includes('.') ? stepValue.toString().split('.')[1].length : 0;
+                        const finalValue = newValue.toFixed(precision);
+                        
+                        triggerHaptic();
+                        handleChange(focused.field, finalValue);
+                    };
+
+                    const handleTouchStart = (e) => { 
+                        e.stopPropagation(); 
+                        setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY }); 
+                    };
+
+                    const handleTouchMove = (e) => { 
+                        if (!isSteppable || !touchStart) return; 
+                        if (Math.abs(e.touches[0].clientY - touchStart.y) > 10) {
+                            e.preventDefault(); 
+                        }
+                    };
+                    
+                    const handleTouchEnd = (e) => {
+                        if (!isSteppable || !touchStart) return;
+                        e.preventDefault();
+                        const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+                        const diffX = touchEnd.x - touchStart.x;
+                        const diffY = touchEnd.y - touchStart.y;
+                        const threshold = 30;
+
+                        if (Math.abs(diffY) > threshold && Math.abs(diffY) > Math.abs(diffX)) {
+                            handleStep(diffY < 0 ? 'up' : 'down');
+                        }
+                        setTouchStart(null);
+                    };
+
+                    return (
+                        <div 
+                            className="segment-card" 
+                            onTouchStart={handleTouchStart} 
+                            onTouchMove={handleTouchMove} 
+                            onTouchEnd={handleTouchEnd}
+                            role="group"
+                            aria-label={`${segment.name} Segment, currently set to ${formData[segment.dur]} minutes and ${formData[segment.spd]} miles per hour.`}
+                        >
+                            {children}
+                        </div>
+                    );
+                };
+                
+                return (
+                    <div className="space-y-4" ref={durationRef} tabIndex="-1">
+                        <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 text-center mb-4">
+                            <p className="text-sm font-bold text-gray-400 uppercase">Calculated Totals</p>
+                            <div className="flex justify-around mt-2 text-white">
+                                <div><span className="block text-xl font-black">{stat.totalDur}</span><span className="text-xs text-gray-400">Minutes</span></div>
+                                <div><span className="block text-xl font-black">{stat.avgSpd}</span><span className="text-xs text-gray-400">Avg MPH</span></div>
+                            </div>
+                        </div>
+                        {segments.map((s, i) => (
+                            <SegmentSwipeHandler key={s.dur} segment={s}>
+                                <div className="segment-name" role="presentation">{i + 1}. {s.name}</div>
+                                <label htmlFor={`tm-${s.dur}`} className="segment-label segment-dur-label">Duration ({formData[s.dur]} {formData[s.dur] > 0 ? 'min' : 'mins'})</label>
+                                <div className="segment-dur-input">
+                                    <StaticInput id={`tm-${s.dur}`} label="Duration" value={formData[s.dur]} onChange={v => handleChange(s.dur, v)} inputMode="numeric" unit="minutes" stepValue={1} isSegmentInput={true} className="text-center p-3 text-lg" />
+                                </div>
+                                <label htmlFor={`tm-${s.spd}`} className="segment-label segment-spd-label">Speed ({formData[s.spd]} mph)</label>
+                                <div className="segment-spd-input">
+                                    <StaticInput id={`tm-${s.spd}`} label="Speed" value={formData[s.spd]} onChange={v => handleChange(s.spd, v)} inputMode="decimal" unit="mph" stepValue={0.1} isSegmentInput={true} className="text-center p-3 text-lg" />
+                                </div>
+                            </SegmentSwipeHandler>
+                        ))}
+                        <StaticInput id={`tm-inc`} label="Incline" value={formData.inclinePct} onChange={v => handleChange('inclinePct', v)} inputMode="decimal" unit="%" stepValue={0.5} />
+                        <button type="button" onClick={startActiveRun} className="w-full py-5 mt-4 bg-slate-600 text-white rounded-xl shadow-lg font-bold text-xl flex items-center justify-center gap-3 border-b-4 border-slate-800 active:border-b-0 active:mt-1"><Icons.Play size={32} /> Start Audio Guided Run</button>
+                    </div>
+                );
+            };
+
+            if (activeRunConfig) return <ActiveRunTimer phases={activeRunConfig.phases} type={activeRunConfig.type} onCancel={() => setActiveRunConfig(null)} onComplete={() => setActiveRunConfig(null)} />;
+            if (showEtpMenu) return <ETPMenuView onBack={() => { playSound('click'); setActivity(''); setShowEtpMenu(false); }} onSelect={(act) => { setActivity(act); setShowEtpMenu(false); }} />;
+
+            if (!activity) {
+                return (
+                    <div className="bg-slate-800 text-white p-6 rounded-lg shadow-lg border border-slate-700">
+                        <div className="text-center mb-6"><div role="presentation" className="text-xl font-bold text-white mb-1" tabIndex="-1">Cardio Selection</div></div>
+                        <div className="grid grid-cols-1 gap-4">{['HIIT Run', 'Indoor Cycle', 'ETP Run', 'Incline Walk'].map(type => (<button key={type} onClick={() => { triggerHaptic(); type === 'ETP Run' ? setShowEtpMenu(true) : setActivity(type); }} className="p-5 bg-slate-700 text-white font-bold text-xl rounded-lg border-2 border-slate-600 hover:bg-slate-600 hover:border-slate-500 text-left flex justify-between items-center">{type} <Icons.ArrowRight size={24} /></button>))}</div>
+                    </div>
+                );
+            }
+            
+            return (
+                <form onSubmit={handleSubmit} className="bg-slate-800 text-white p-6 rounded-lg shadow-xl border-t-8 border-slate-600 space-y-8 border-slate-700">
+                    <div className="flex justify-between items-center mb-4">
+                        <div role="presentation" className="text-xl font-bold text-white">{activity} Log</div>
+                        {lastSession && (<button type="button" onClick={handleQuickLog} className="bg-slate-700 text-white px-4 py-2 rounded-lg font-bold text-sm border border-slate-600 shadow-sm hover:bg-slate-600">⚡ Quick Log</button>)}
+                    </div>
+                    {lastSession && (<div className="bg-slate-900 p-3 rounded mb-4 border border-slate-700 text-sm text-gray-300"><strong>Last Time:</strong> {lastSession.metrics.duration} minutes {lastSession.metrics.avgSpeed && `@ ${lastSession.metrics.avgSpeed} mph`}</div>)}
+
+                    <section className="bg-slate-700 p-4 rounded-lg border border-slate-600 space-y-6">
+                        <div role="presentation" className="font-bold text-gray-400 uppercase text-lg border-b border-slate-600 pb-2">Activity Metrics</div>
+                        {(activity === 'Tempo Run' || activity === 'Progressive Run') && renderSegmentInputs(activity === 'Tempo Run' ? T_SEGMENTS : P_SEGMENTS, activity === 'Tempo Run' ? 'tempo' : 'prog')}
+                        {activity === 'HIIT Run' && (
+                            <div className="space-y-4" ref={durationRef} tabIndex="-1">
+                                <StaticInput id="c-duration" label="Total Duration" value={formData.duration} onChange={v => handleChange('duration', v)} inputMode="numeric" unit="minutes" stepValue={1} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <StaticInput id="c-easy" label="Easy" value={formData.speedEasy} onChange={v => handleChange('speedEasy', v)} inputMode="decimal" unit="mph" stepValue={0.1} />
+                                    <StaticInput id="c-mod" label="Moderate" value={formData.speedMod} onChange={v => handleChange('speedMod', v)} inputMode="decimal" unit="mph" stepValue={0.1} />
+                                    <StaticInput id="c-hard" label="Hard" value={formData.speedHard} onChange={v => handleChange('speedHard', v)} inputMode="decimal" unit="mph" stepValue={0.1} />
+                                    <StaticInput id="c-max" label="All Out" value={formData.speedAllOut} onChange={v => handleChange('speedAllOut', v)} inputMode="decimal" unit="mph" stepValue={0.1} />
+                                </div>
+                                <StaticInput id="c-inc" label="Incline" value={formData.inclinePct} onChange={v => handleChange('inclinePct', v)} inputMode="decimal" unit="%" stepValue={0.5} />
+                            </div>
+                        )}
+                        {activity === 'Indoor Cycle' && (
+                            <div className="space-y-4" ref={durationRef} tabIndex="-1">
+                                <StaticInput id="c-duration" label="Total Duration" value={formData.duration} onChange={v => handleChange('duration', v)} inputMode="numeric" unit="minutes" stepValue={1} />
+                                <div><label className="block text-sm font-bold text-gray-400 mb-3" id="intensity-label">Intensity</label><div className="grid grid-cols-2 gap-3" role="radiogroup" aria-labelledby="intensity-label">{['Easy', 'Moderate', 'Hard', 'All Out'].map(level => (<label key={level} className={`p-4 border-2 rounded-lg flex items-center justify-center font-bold cursor-pointer ${formData.intensity === level ? 'bg-slate-700 border-slate-400 text-white' : 'border-slate-600 text-gray-400 bg-slate-800 hover:bg-slate-700'}`}><input type="radio" name="intensity" value={level} checked={formData.intensity === level} onChange={e => handleChange('intensity', e.target.value)} className="sr-only" />{level}</label>))}</div></div>
+                            </div>
+                        )}
+                        {activity === 'Endurance Run' && (
+                            <div className="space-y-4" ref={durationRef} tabIndex="-1">
+                                <StaticInput id="c-duration" label="Total Duration" value={formData.duration} onChange={v => handleChange('duration', v)} inputMode="numeric" unit="minutes" stepValue={1} />
+                                <StaticInput id="c-avg" label="Average Speed" value={formData.avgSpeed} onChange={v => handleChange('avgSpeed', v)} inputMode="decimal" unit="mph" stepValue={0.1} />
+                                <StaticInput id="c-inc" label="Incline" value={formData.inclinePct} onChange={v => handleChange('inclinePct', v)} inputMode="decimal" unit="%" stepValue={0.5} />
+                            </div>
+                        )}
+                        {activity === 'Incline Walk' && (
+                            <div className="space-y-4" ref={durationRef} tabIndex="-1">
+                                <StaticInput id="c-duration" label="Total Duration" value={formData.duration} onChange={v => handleChange('duration', v)} inputMode="numeric" unit="minutes" stepValue={1} />
+                                <StaticInput id="c-w-avg" label="Average Speed" value={formData.avgSpeed} onChange={v => handleChange('avgSpeed', v)} inputMode="decimal" unit="mph" stepValue={0.1} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <StaticInput id="c-min" label="Min Incline" value={formData.minIncline} onChange={v => handleChange('minIncline', v)} inputMode="decimal" unit="%" stepValue={0.5} />
+                                    <StaticInput id="c-max" label="Max Incline" value={formData.maxIncline} onChange={v => handleChange('maxIncline', v)} inputMode="decimal" unit="%" stepValue={0.5} />
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                    
+                    <section className="bg-slate-700 p-4 rounded-lg border border-slate-600 space-y-4">
+                        <div role="presentation" className="font-bold text-gray-400 uppercase text-lg border-b border-slate-600 pb-2">Heart Rate Statistics</div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <StaticInput id="std-hr-avg" label="Average HR" value={formData.avgHR} onChange={v => handleChange('avgHR', v)} inputMode="numeric" unit="bpm" stepValue={1}/>
+                            <StaticInput id="std-hr-max" label="Max HR" value={formData.maxHR} onChange={v => handleChange('maxHR', v)} inputMode="numeric" unit="bpm" stepValue={1}/>
+                        </div>
+                    </section>
+                    <section className="bg-slate-700 p-4 rounded-lg border border-slate-600 space-y-6">
+                        <div role="presentation" className="font-bold text-gray-400 uppercase text-lg border-b border-slate-600 pb-2">Session Details</div>
+                        <div className="flex items-center gap-3">
+                            <input id="c-guided" type="checkbox" checked={formData.isGuided} onChange={e => handleChange('isGuided', e.target.checked)} className="w-6 h-6 text-slate-400 rounded focus:ring-slate-500 border-gray-300 bg-slate-800" />
+                            <label htmlFor="c-guided" className="text-lg font-bold text-gray-400">Guided Routine (Fitness+)</label>
+                        </div>
+                        <div>
+                            <label htmlFor="cardio-notes" className="block text-sm font-bold text-gray-400 mb-1">Notes</label>
+                            <textarea id="cardio-notes" aria-label="Notes on Cardio" value={formData.notes} onChange={e => handleChange('notes', e.target.value)} className="w-full p-3 text-lg border border-slate-600 rounded bg-slate-800 text-white" placeholder="" rows="3" />
+                        </div>
+                        <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                            <StaticInput id="c-effort" label="Effort Score (1-10)" value={formData.effort} onChange={v => handleChange('effort', v)} inputMode="numeric" stepValue={1} />
+                        </div>
+                    </section>
+                    <div className="flex gap-3 pt-4"><button type="submit" className="w-full py-4 bg-slate-600 text-white rounded-lg font-bold text-xl shadow flex items-center justify-center gap-2 hover:bg-slate-700"><Icons.Check size={24} /> Save Log Entry</button></div>
+                </form>
+            );
+        }
+
+        function AIPrepView({ data, onBack, setAnnouncementText }) {
+            const [prompt, setPrompt] = useState(`Act as an expert marathon coach and sports physiologist specializing in adaptive athletics for blind runners.\n\nAthlete Profile:\nI am a 53-year-old male with low vision (light perception only). My training environment is strictly controlled for safety/accessibility, consisting primarily of treadmill running, indoor cycling, and accessible weight training.\n\nCurrent Status vs. Goal:\n* Current Baseline: My comfortable running speed is between 5.2 and 5.8 mph.\n* The Goal: I am training to run a marathon next year with a target speed of 6.5 mph.\n\nThe Data:\nBelow is my detailed workout history exported from my tracker, '${APP_NAME}.'\n\nRequired Analysis:\nPlease analyze this data to help me bridge the gap from 5.8 mph to 6.5 mph. Specifically:\n1. Volume & Tonnage Trends: Calculate the total volume (tonnage) of my strength sessions. Is my lifting capacity trending up, and does this correlate with faster run times?\n2. Personal Records (PRs): Identify any recent PRs in weight or speed. Are these isolated spikes or signs of sustainable improvement?\n3. Strength-to-Speed Correlation: Analyze if increases in lower body/core strength are translating to better treadmill performance.\n4. Speed Progression: Suggest a safe protocol to incrementally increase my treadmill speed towards 6.5 mph based on my heart rate and duration capabilities.\n\nOutput: Provide a summary of my key trends (volume, PRs, speed) and 3 specific, actionable adjustments for next week.`);
+            
+            const handleShare = async () => {
+                triggerHaptic();
+                const fullPayload = `${prompt}\n\n=== DATA REPORT ===\n${data}`;
+                try { 
+                    const tempInput = document.createElement('textarea');
+                    tempInput.value = fullPayload;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    playSound('success'); 
+                } catch(e) { console.error(e); }
+                if (navigator.share) { try { await navigator.share({ title: `${APP_NAME} Report`, text: fullPayload }); } catch (err) { console.log('Share dismissed', err); } } 
+                else { setAnnouncementText("Report copied to clipboard!"); }
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-slate-800 text-white p-4 rounded-lg shadow text-center border border-slate-700">
+                        <button onClick={() => { playSound('click'); onBack(); }} className="absolute left-4 top-24 text-gray-400 font-bold flex items-center gap-1 p-2"><Icons.ArrowLeft size={20} /> Back</button>
+                        <div role="presentation" className="text-xl font-bold text-white mt-2">AI Report Composer</div>
+                    </div>
+                    <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                        <label className="block text-sm font-bold text-gray-300 mb-2 uppercase tracking-wide">1. Your AI Prompt</label>
+                        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} className="w-full p-4 text-lg border-2 border-slate-600 rounded bg-slate-900 text-white min-h-[120px] focus:ring-4 focus:ring-slate-500/50 outline-none" placeholder="Tell the AI what to do with your data..." rows="10"/>
+                    </div>
+                    <div className="bg-slate-800 p-4 rounded-lg shadow border border-slate-700">
+                        <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wide">2. Data Preview (Read Only)</label>
+                        <div className="bg-slate-900 p-3 rounded text-lg font-mono text-gray-400 max-h-40 overflow-y-auto whitespace-pre-wrap select-none opacity-70">{data}</div>
+                    </div>
+                    <button onClick={handleShare} className="w-full py-5 bg-slate-600 text-white rounded-lg font-bold text-xl flex items-center justify-center gap-3 hover:bg-slate-700 shadow-lg border-2 border-slate-500">
+                        <Icons.Send size={24} /> Finalize & Share to AI
+                    </button>
+                </div>
+            );
+        }
+
+        const generateReportText = (entries, filterType) => { 
+            let text = `${APP_NAME.toUpperCase()} REPORT - ${filterType.toUpperCase()}\nGenerated: ${new Date().toLocaleString()}\n----------------------------------------\n\n`; 
+            if (entries.length === 0) { text += "No workouts found.\n"; return text; } 
+            entries.forEach(entry => { 
+                const dateStr = new Date(entry.date).toLocaleDateString(); 
+                text += `DATE: ${dateStr}\nTYPE: ${entry.isCardio ? `Cardio (${entry.activity})` : entry.isVital ? 'Vitals' : entry.isRest ? `Rest (${entry.routine || entry.activity})` : `Weight Training (${entry.routine})`}\n`; 
+                if (entry.isCardio) { 
+                    const m = entry.metrics;
+                    text += `DURATION: ${m.duration} mins\n`;
+                    if (m.avgSpeed) text += `AVG SPEED: ${m.avgSpeed} mph\n`;
+                    if (m.effort) text += `EFFORT: ${m.effort}/10\n`;
+                } 
+                else if (entry.isVital) { 
+                    const m = entry.metrics;
+                    text += `WEIGHT: ${m.weight} lbs\n`;
+                } 
+                else if (entry.isRest) { 
+                    text += `NOTE: ${entry.metrics.notes}\n`; 
+                } 
+                else { 
+                    if (entry.totalVolume) { text += `TOTAL VOLUME: ${entry.totalVolume} lbs\n`; }
+                    (entry.exercises || []).forEach(ex => { 
+                    const details = [
+                        ex.sets && `${ex.sets} sets`, ex.reps && `${ex.reps} reps`, 
+                        ex.weight && `${ex.weight} lbs`
+                    ].filter(Boolean).join(', ');
+                    text += ` - ${ex.name}: ${details}\n`; 
+                }); } 
+                text += `\n----------------------------------------\n\n`; 
+            }); 
+            return text; 
+        };
+
+        const generateReportCSV = (entries) => { 
+            const headers = ["Date", "Type", "Activity", "Duration", "Avg Speed", "Volume", "Weight", "Sets", "Reps", "Notes"]; 
+            let csv = headers.join(',') + '\n'; 
+            const escapeCSV = (value) => `"${String(value || '').replace(/"/g, '""')}"`; 
+            entries.forEach(entry => { 
+                const dateStr = new Date(entry.date).toLocaleDateString(); 
+                if (entry.isCardio) { 
+                    csv += [dateStr, "Cardio", entry.activity, entry.metrics.duration, entry.metrics.avgSpeed, "", "", "", "", entry.metrics.notes].map(escapeCSV).join(',') + '\n'; 
+                } else if (entry.isVital) {
+                    csv += [dateStr, "Vital", "Body Comp", "", "", "", entry.metrics.weight, "", "", entry.metrics.notes].map(escapeCSV).join(',') + '\n';
+                } else if (!entry.isRest) {
+                    (entry.exercises || []).forEach(ex => {
+                        csv += [dateStr, "Strength", entry.routine, "", "", entry.totalVolume, ex.weight, ex.sets, ex.reps, ex.notes].map(escapeCSV).join(',') + '\n';
+                    });
+                }
+            }); 
+            return csv; 
+        };
+
+        function ReportsView({ history, onBack, onComposeAI, setAnnouncementText }) {
+            const [filter, setFilter] = useState('week'); 
+            const FILTERS = ['day', 'week', 'month', 'year', 'all'];
+            const filteredEntries = useMemo(() => { 
+                const now = new Date(); 
+                return history.filter(entry => { 
+                    const d = new Date(entry.date); 
+                    const filters = {
+                        day: d.toLocaleDateString() === now.toLocaleDateString(),
+                        week: d >= new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000)),
+                        month: d >= new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)),
+                        year: d >= new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000)),
+                        all: true
+                    };
+                    return filters[filter];
+                }).slice().reverse(); 
+            }, [filter, history]);
+            const reportText = useMemo(() => generateReportText(filteredEntries, filter), [filteredEntries, filter]);
+            const handleDownload = (isCSV) => { 
+                triggerHaptic(); 
+                const data = isCSV ? generateReportCSV(filteredEntries) : reportText;
+                const type = isCSV ? 'text/csv;charset=utf-8;' : 'text/plain';
+                const blob = new Blob([data], { type }); 
+                const url = URL.createObjectURL(blob); 
+                const a = document.createElement('a'); 
+                a.href = url; a.download = `ProjectHermes_Report.${isCSV ? 'csv' : 'txt'}`; 
+                document.body.appendChild(a); a.click(); 
+                document.body.removeChild(a); URL.revokeObjectURL(url); 
+                setAnnouncementText("Report downloaded."); 
+            };
+            return (
+                <div className="space-y-6">
+                    <div className="bg-slate-800 text-white p-4 rounded-lg shadow text-center border border-slate-700"><div role="presentation" className="text-xl font-bold">Reports</div></div>
+                    <div className="bg-slate-800 text-white p-4 rounded-lg shadow border border-slate-700">
+                        <div className="grid grid-cols-5 gap-1">
+                            {FILTERS.map(f => (<button key={f} onClick={() => { playSound('click'); triggerHaptic(); setFilter(f); }} 
+                                className={`py-3 px-1 rounded text-sm font-bold uppercase ${filter === f ? 'bg-slate-600 text-white' : 'bg-slate-700 text-gray-300'}`}>{f}</button>))}
+                        </div>
+                    </div>
+                    <button onClick={() => { playSound('click'); onComposeAI(reportText); }} className="w-full py-5 bg-slate-600 text-white rounded-lg font-bold text-xl flex items-center justify-center gap-3 hover:bg-slate-700 shadow-lg border-2 border-slate-500">
+                        <Icons.Activity size={24} /> Compose AI Prompt
+                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={() => handleDownload(false)} className="flex-1 py-4 bg-slate-800 text-gray-300 border-2 border-slate-700 rounded-lg font-bold flex items-center justify-center gap-2 text-sm hover:bg-slate-700"><Icons.FileText size={20} /> TXT</button>
+                        <button onClick={() => handleDownload(true)} className="flex-1 py-4 bg-slate-800 text-gray-300 border-2 border-slate-700 rounded-lg font-bold flex items-center justify-center gap-2 text-sm hover:bg-slate-700"><Icons.Download size={20} /> CSV</button>
+                    </div>
+                    <div className="space-y-4"><div role="presentation" className="text-lg font-bold text-gray-300 border-b border-slate-700 pb-2">Preview</div><div className="bg-slate-900 p-4 rounded-lg shadow-inner text-lg font-mono whitespace-pre-wrap max-h-[50vh] overflow-y-auto border border-slate-700 text-gray-300">{reportText}</div></div>
+                </div>
+            );
+        }
+
+        function DatabaseAmendmentView({ customDb, onUpdateCustomDb, onBack, setAnnouncementText }) {
+            const ROUTINES = ['Upper Body', 'Lower Body', 'Core'];
+            const allExercisesByRoutine = useMemo(() => {
+                const curated = {};
+                for (const routine of ROUTINES) {
+                    const defaultList = DEFAULT_DB[routine] || [];
+                    const customList = customDb[routine] || [];
+                    const fullList = [
+                        ...defaultList.map(name => ({ name, isCustom: false, id: `${routine}_${name}` })),
+                        ...customList.map(name => ({ name, isCustom: true, id: `${routine}_${name}` })),
+                    ];
+                    const uniqueNames = new Set();
+                    curated[routine] = fullList.filter(item => {
+                        if (uniqueNames.has(item.name)) return false;
+                        uniqueNames.add(item.name);
+                        return true;
+                    }).sort((a, b) => a.name.localeCompare(b.name));
+                }
+                return curated;
+            }, [customDb]);
+            const handleDeleteCustom = (routine, name) => {
+                triggerHaptic(); playSound('delete');
+                onUpdateCustomDb(prevDb => {
+                    const newCustomList = (prevDb[routine] || []).filter(exName => exName !== name);
+                    setAnnouncementText(`Deleted ${name}.`);
+                    return { ...prevDb, [routine]: newCustomList };
+                });
+            };
+            return (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <button onClick={() => { playSound('click'); onBack(); }} className="text-gray-400 font-bold flex items-center gap-1 p-2 bg-slate-700 rounded hover:bg-slate-600">
+                            <Icons.ArrowLeft size={20} /> Back
+                        </button>
+                        <div role="presentation" className="text-xl font-bold text-white">Database Amendment</div>
+                    </div>
+                    {ROUTINES.map(routine => (
+                        <div key={routine} className="bg-slate-800 p-4 rounded-lg shadow border border-slate-700">
+                            <div role="presentation" className="text-lg font-bold text-gray-300 mb-4 border-b border-slate-700 pb-2">{routine}</div>
+                            <ul className="space-y-2 list-none p-0">
+                                {allExercisesByRoutine[routine].map(ex => (
+                                    <li key={ex.id} className="flex justify-between items-center bg-slate-900 p-3 rounded border border-slate-700">
+                                        <span className="font-medium text-gray-200">{ex.name}</span>
+                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-4 flex items-center gap-2">
+                                            {ex.isCustom ? (
+                                                <>
+                                                    (Custom)
+                                                    <button onClick={() => handleDeleteCustom(routine, ex.name)} className="p-1 bg-slate-700 text-red-400 rounded hover:bg-slate-600 ml-1" aria-label={`Delete custom exercise ${ex.name}`}><Icons.Trash2 size={16} /></button>
+                                                </>
+                                            ) : ("(Default)")}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+        
+        function MaintenanceHubView({ onBack, onAmendDb, onBackup, onRestore, onAnalyze, lastRestoredFile, setAnnouncementText }) {
+             return (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <button onClick={() => { playSound('click'); onBack(); }} className="text-gray-400 font-bold flex items-center gap-1 p-2 bg-slate-700 rounded hover:bg-slate-600">
+                            <Icons.ArrowLeft size={20} /> Back
+                        </button>
+                        <div role="presentation" className="text-xl font-bold text-white">Maintenance Hub</div>
+                    </div>
+                    
+                    <button onClick={onAnalyze} className="w-full p-5 bg-slate-700 text-blue-300 rounded-xl shadow border border-slate-700 hover:bg-slate-600 text-left flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4"><Icons.Search size={24} className="text-blue-400" /><span className="text-xl font-bold">Analyze Training History</span></div>
+                        <Icons.ArrowRight size={24} className="text-gray-400" />
+                    </button>
+
+                    <div className="space-y-4 mb-8 p-4 bg-slate-800 rounded-lg shadow border border-slate-700">
+                        <div role="presentation" className="text-lg font-bold text-gray-300 border-b border-slate-700 pb-2 flex items-center gap-2"><Icons.Cloud size={20} className="text-gray-400" /> Backup & Restore</div>
+                        <div className="space-y-4">
+                            <button onClick={onBackup} className="w-full flex items-center justify-center gap-3 bg-slate-700 text-white p-5 rounded-lg font-bold text-lg hover:bg-slate-600">Backup Data</button>
+                            <div className="relative">
+                                <input type="file" accept=".json" onChange={onRestore} className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" id="restore-input" />
+                                <label htmlFor="restore-input" className="w-full flex items-center justify-center gap-3 bg-slate-600 text-white p-5 rounded-lg font-bold text-lg cursor-pointer hover:bg-slate-700">Restore Data</label>
+                            </div>
+                            {lastRestoredFile && (
+                                <div className="mt-4 p-4 bg-slate-900 border border-slate-700 rounded-lg text-gray-300 flex items-center gap-3" role="status">
+                                    <Icons.CheckCircle size={24} className="text-gray-400 flex-shrink-0" />
+                                    <div><p className="font-bold text-sm uppercase text-white">Success</p><p className="font-medium">Database restored: <span className="font-bold">{lastRestoredFile}</span></p></div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <button onClick={onAmendDb} className="w-full p-5 bg-slate-700 text-gray-100 rounded-xl shadow border border-slate-700 hover:bg-slate-600 text-left flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4"><Icons.Settings size={24} className="text-gray-400" /><span className="text-xl font-bold">Database Amendment</span></div>
+                        <Icons.ArrowRight size={24} className="text-gray-400" />
+                    </button>
+                </div>
+            );
+        }
+
+        function App() {
+            const [isDataLoaded, setIsDataLoaded] = useState(false); 
+            const [showSplash, setShowSplash] = useState(true);
+            const [currentDate] = useState(new Date()); 
+            const [view, setView] = useState('menu'); 
+            const [history, setHistory] = useState([]);
+            const [manualRoutine, setManualRoutine] = useState(null);
+            const [todaysExercises, setTodaysExercises] = useState([]);
+            const [customDb, setCustomDb] = useState({});
+            const [editingId, setEditingId] = useState(null);
+            const [announcementText, setAnnouncementText] = useState('');
+            const [announcementKey, setAnnouncementKey] = useState(0); 
+            const [workoutEffort, setWorkoutEffort] = useState('5');
+            const [targetCardio, setTargetCardio] = useState('');
+            const [lastRestoredFile, setLastRestoredFile] = useState(null);
+            const [aiReportData, setAiReportData] = useState('');
+
+            const announce = (message) => { 
+                setAnnouncementText(message); setAnnouncementKey(prev => prev + 1);
+                setTimeout(() => setAnnouncementText(''), 1000);
+            };
+            const activeRoutine = manualRoutine || getRoutineForDay(currentDate);
+            useEffect(() => {
+                try {
+                    const saved = {
+                        history: localStorage.getItem('workout_history'), session: localStorage.getItem('current_session'), sessionDate: localStorage.getItem('current_session_date'),
+                        customDb: localStorage.getItem('custom_exercise_db'), manualRoutine: localStorage.getItem('manual_routine'), seenSplash: sessionStorage.getItem('seen_splash_v5'),
+                    };
+                    if (saved.history) setHistory(JSON.parse(saved.history));
+                    if (saved.customDb) setCustomDb(JSON.parse(saved.customDb));
+                    if (saved.seenSplash) setShowSplash(false);
+                    const todayStr = new Date().toLocaleDateString();
+                    if (saved.sessionDate && new Date(saved.sessionDate).toLocaleDateString() === todayStr) { 
+                        if (saved.manualRoutine) setManualRoutine(saved.manualRoutine); 
+                        if (saved.session) setTodaysExercises(JSON.parse(saved.session));
+                    }
+                } catch (err) { console.error("Critical Init Error", err); } 
+                finally { setTimeout(() => { const loader = document.getElementById('loading-screen'); if (loader) loader.style.display = 'none'; setIsDataLoaded(true); }, 800); }
+            }, []);
+            useEffect(() => { if(isDataLoaded) { localStorage.setItem('current_session', JSON.stringify(todaysExercises)); localStorage.setItem('current_session_date', new Date().toString()); } }, [todaysExercises, isDataLoaded]);
+            useEffect(() => { if(isDataLoaded) localStorage.setItem('workout_history', JSON.stringify(history)); }, [history, isDataLoaded]);
+            useEffect(() => { if(isDataLoaded) localStorage.setItem('custom_exercise_db', JSON.stringify(customDb)); }, [customDb, isDataLoaded]);
+            const masterExerciseList = useMemo(() => [...new Set([...Object.values(DEFAULT_DB).flat(), ...Object.values(customDb).flat()])].sort(), [customDb]);
+            const activeRoutineExercises = useMemo(() => {
+                const defaults = DEFAULT_DB[activeRoutine] || [];
+                const customs = customDb[activeRoutine] || [];
+                return [...new Set([...defaults, ...customs])].sort();
+            }, [activeRoutine, customDb]);
+            const activeExercise = useMemo(() => {
+                if (!todaysExercises.length) return null;
+                if (editingId) return todaysExercises.find(ex => ex.id === editingId);
+                return todaysExercises.find(ex => !ex.isCompleted);
+            }, [todaysExercises, editingId]);
+            const upNextExercises = useMemo(() => { if (!activeExercise) return []; const activeIndex = todaysExercises.findIndex(ex => ex.id === activeExercise.id); return todaysExercises.slice(activeIndex + 1).filter(ex => !ex.isCompleted); }, [todaysExercises, activeExercise]);
+            const completedExercises = useMemo(() => todaysExercises.filter(ex => ex.isCompleted), [todaysExercises]);
+            const lastEntry = useMemo(() => history.length > 0 ? history.slice(-1)[0] : null, [history]);
+            const activeExerciseHistory = useMemo(() => {
+                if (!activeExercise) return null;
+                for (let i = history.length - 1; i >= 0; i--) { 
+                    const entry = history[i];
+                    if (entry.isCardio || entry.isVital || entry.isRest || !entry.exercises?.length || entry.isBonus) continue; 
+                    const pastExercise = entry.exercises.find(e => e.name.toLowerCase() === activeExercise.name.toLowerCase()); 
+                    if (pastExercise) { return pastExercise; } 
+                }
+                return null;
+            }, [activeExercise, history]);
+            const goToMenu = () => { try { sessionStorage.setItem('seen_splash_v5', 'true'); } catch (e) {} setShowSplash(false); setView('menu'); playSound('click'); announce("Menu loaded."); };
+            const switchToBonus = () => { try { sessionStorage.setItem('seen_splash_v5', 'true'); } catch (e) {} setShowSplash(false); setView('bonus'); playSound('click'); announce("Bonus Zone loaded."); };
+            const changeRoutine = (newRoutine) => { 
+                if (todaysExercises.length > 0) setTodaysExercises([]); 
+                setManualRoutine(newRoutine); localStorage.setItem('manual_routine', newRoutine);
+                announce(`Focus changed to ${newRoutine}.`); 
+            };
+            const handleLogRest = (activityName, type, customDateStr = null) => {
+                const record = { id: Date.now(), date: customDateStr ? (customDateStr + " 12:00:00") : new Date().toString(), isRest: true, isCardio: type === 'Cardio', routine: type === 'Strength' ? activityName : undefined, activity: type === 'Cardio' ? activityName : undefined, metrics: { notes: 'Rest Day logged' } };
+                setHistory(prev => [...prev, record]);
+                announce(`${activityName} marked as Rest.`);
+            };
+            const handleVitalsSave = (metrics) => { const record = { id: Date.now(), date: new Date().toString(), isVital: true, metrics }; setHistory(prev => [...prev, record]); setView('menu'); announce("Vitals Saved."); };
+            const handleSaveCardio = (activity, metrics) => { const record = { id: Date.now(), date: new Date().toString(), isCardio: true, activity, metrics }; setHistory(prev => [...prev, record]); announce("Cardio Saved."); setTargetCardio(''); setView('menu'); };
+            const handleBonusSave = (entry) => {
+                const record = { id: Date.now(), date: new Date().toString(), isCardio: entry.type === 'Cardio', routine: 'Bonus Session', isBonus: true, activity: entry.type === 'Cardio' ? entry.name : undefined, metrics: entry.type === 'Cardio' ? entry : undefined, exercises: entry.type === 'Strength' ? [{ name: entry.name, weight: entry.weight, sets: entry.sets, reps: entry.reps }] : undefined };
+                setHistory(prev => [...prev, record]);
+                announce(`${entry.name} saved.`);
+            };
+            const handleLoadLastWorkout = () => { 
+                triggerHaptic(); 
+                const lastWorkout = history.slice().reverse().find(w => !w.isCardio && !w.isBonus && w.routine === activeRoutine && w.exercises?.length); 
+                if (!lastWorkout) { announce(`No history found.`); return; } 
+                const newSession = lastWorkout.exercises.map(ex => ({ ...ex, id: Date.now() + Math.random(), previousWeight: ex.weight, isCompleted: false, sets: String(ex.sets || ''), reps: String(ex.reps || ''), weight: String(ex.weight || ''), time: String(ex.time || ''), notes: '', })); 
+                setTodaysExercises(newSession); if(newSession.length) setEditingId(newSession[0].id); announce("Loaded last session.");
+            };
+            const handleAddExercise = (exerciseName, isNewCustom) => { 
+                triggerHaptic(); 
+                if(isNewCustom) setCustomDb(prev => { const list = prev[activeRoutine] || []; return list.includes(exerciseName) ? prev : { ...prev, [activeRoutine]: [...list, exerciseName] }; });
+                let lastData = { sets: '', reps: '', weight: '', time: '', notes: '' };
+                for (let i = history.length - 1; i >= 0; i--) { 
+                    const entry = history[i];
+                    if (entry.isCardio || entry.isVital || entry.isRest || !entry.exercises?.length || entry.isBonus) continue; 
+                    const pastExercise = entry.exercises.find(e => e.name.toLowerCase() === exerciseName.toLowerCase()); 
+                    if (pastExercise) { lastData = { ...pastExercise }; break; } 
+                }
+                const newExercise = { id: Date.now(), name: exerciseName, isCompleted: false, sets: String(lastData.sets || ''), reps: String(lastData.reps || ''), weight: String(lastData.weight || ''), time: String(lastData.time || ''), notes: '', previousWeight: String(lastData.weight || '') }; 
+                setTodaysExercises(prev => [...prev, newExercise]); 
+                setEditingId(newExercise.id); 
+                announce(`Added ${exerciseName}.`); 
+            };
+            const updateExercise = (id, field, value) => setTodaysExercises(prev => prev.map(ex => ex.id === id ? { ...ex, [field]: value } : ex));
+            const removeExercise = (id, name) => { setTodaysExercises(prev => prev.filter(ex => ex.id !== id)); if (editingId === id) setEditingId(null); announce("Removed."); };
+            const completeExercise = (id, name) => { setTodaysExercises(prev => prev.map(e => e.id === id ? { ...e, isCompleted: true } : e)); setEditingId(null); };
+            const handleSkipExercise = (currentExercise) => { 
+                triggerHaptic(); playSound('skip');
+                const newSession = todaysExercises.filter(ex => ex.id !== currentExercise.id);
+                setTodaysExercises([...newSession, currentExercise]); 
+                setEditingId(null); 
+                announce(`Skipped ${currentExercise.name}.`); 
+            };
+            const finishWorkout = () => { 
+                triggerHaptic(); if (!todaysExercises.length) return; setEditingId(null); 
+                const totalVolume = calculateTotalVolume(todaysExercises.filter(ex => ex.isCompleted));
+                const record = { id: Date.now(), date: new Date().toString(), routine: activeRoutine, isCardio: false, exercises: todaysExercises, overallEffort: workoutEffort, totalVolume }; 
+                setHistory(prev => [...prev, record]); 
+                setTodaysExercises([]); localStorage.removeItem('current_session'); setManualRoutine(null); setView('menu'); 
+                announce(`Workout Saved.`);
+            };
+            const backupData = () => { 
+                triggerHaptic(); 
+                const data = { history, currentSession: todaysExercises, customDb, exportDate: new Date().toString() }; 
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); 
+                const url = URL.createObjectURL(blob); 
+                const a = document.createElement('a'); a.href = url; a.download = `ProjectHermes_Backup.json`; 
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); announce("Backup started."); 
+            };
+            const restoreData = (event) => { 
+                triggerHaptic(); const file = event.target.files[0]; if(!file) return; 
+                const reader = new FileReader(); reader.onload = (e) => { 
+                    try { 
+                        const data = JSON.parse(e.target.result); 
+                        if(data.history) setHistory(data.history); 
+                        if(data.currentSession) setTodaysExercises(data.currentSession); 
+                        if(data.customDb) setCustomDb(data.customDb); 
+                        setLastRestoredFile(file.name); announce(`Restored.`); playSound('success'); 
+                    } catch(err) { announce("Error."); } 
+                }; 
+                reader.readAsText(file); 
+            };
+            const handleUpdateEntry = (updatedEntry) => setHistory(prev => prev.map(h => h.id === updatedEntry.id ? updatedEntry : h));
+            const handleDeleteEntry = (id) => setHistory(prev => prev.filter(h => h.id !== id));
+
+            if (!isDataLoaded) return null; 
+            if (showSplash) { 
+                return <SplashScreen onGoToMenu={goToMenu} onBonus={switchToBonus} routine={activeRoutine} history={history} currentSession={todaysExercises} 
+                    onJumpToCardio={(act) => { goToMenu(); if (act === 'ETP Run') setView('etp-menu'); else { setTargetCardio(act); setView('cardio'); } }} 
+                    onJumpToWeights={(rt) => { goToMenu(); changeRoutine(rt); setView('weights'); }} onChangeRoutine={changeRoutine} onLogRest={handleLogRest} setAnnouncementText={announce} />; 
+            }
+            return (
+                <div className="min-h-screen bg-slate-900 text-gray-100 font-sans pb-20">
+                    {announcementText && (<div key={announcementKey} className="fixed top-4 left-1/2 -translate-x-1/2 z-50 p-3 bg-slate-700 text-white font-bold rounded-lg shadow-xl" role="status" aria-live="polite">{announcementText}</div>)}
+                    
+                    <header role="none" className="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-20 border-b border-slate-700">
+                        <div className="max-w-3xl mx-auto flex justify-between items-center" role="none">
+                            <div className="flex gap-2" role="none"> 
+                                <button onClick={() => { triggerHaptic(); view === 'menu' ? setShowSplash(true) : setView('menu'); announce(view !== 'menu' ? "Returning to Main Menu." : "Returning to Progress Screen."); }} className="p-3 bg-slate-800 rounded hover:bg-slate-700 flex items-center gap-2 font-bold" aria-label={view !== 'menu' ? "Go to Main Menu button" : "Go to Progress Screen button"}><Icons.ArrowLeft size={20} /> {view !== 'menu' ? 'Main Menu' : 'Progress Screen'}</button>
+                            </div>
+                            {view === 'menu' && (<button onClick={() => { playSound('click'); setView('maintenance-hub'); announce("Navigating to Maintenance Hub."); }} className="p-3 bg-slate-800 rounded hover:bg-slate-700" aria-label="Go to Data Maintenance Hub"><Icons.Cloud size={20} /></button>)}
+                        </div>
+                    </header>
+
+                    <main className="max-w-3xl mx-auto p-4">
+                        {view === 'menu' && (
+                            <div className="space-y-6 mt-4">
+                                <div className="text-center mb-4"><p className="text-slate-400 font-medium">{formatDate(currentDate)}</p></div>
+                                <button onClick={() => setView('today-history')} className="w-full p-4 bg-slate-800 text-blue-400 rounded-xl shadow border border-slate-700 hover:bg-slate-700 flex items-center justify-center gap-3 font-bold"><Icons.History size={24} /> Review Today's History</button>
+                                <button onClick={() => setView('weights')} className="w-full p-6 bg-slate-700 text-white rounded-xl shadow-lg hover:bg-slate-600 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Dumbbell size={32} className="text-gray-300" /><span className="text-2xl font-extrabold">{activeRoutine}</span></div></button>
+                                <button onClick={() => {setTargetCardio(''); setView('cardio');}} className="w-full p-6 bg-slate-700 text-white rounded-xl shadow-lg hover:bg-slate-600 text-left"><div className="flex items-center gap-4 mb-2"><Icons.Activity size={32} className="text-gray-300" /><span className="text-2xl font-extrabold">Cardio</span></div></button>
+                                <button onClick={() => setView('vitals')} className="w-full p-5 bg-slate-800 text-white rounded-xl shadow border border-slate-700 hover:bg-slate-700 text-left flex items-center gap-4"><Icons.Heart size={24} className="text-gray-400" /><span className="text-xl font-bold">Vitals & BMI</span></button>
+                                <button onClick={() => setView('reports')} className="w-full p-5 bg-slate-800 text-gray-100 rounded-xl shadow border border-slate-700 hover:bg-slate-700 text-left flex items-center gap-4"><Icons.List size={24} className="text-gray-400" /><span className="text-xl font-bold">Reports & AI Prompt</span></button>
+                            </div>
+                        )}
+                        {view === 'today-history' && <TodayHistoryView history={history} onUpdateEntry={handleUpdateEntry} onDeleteEntry={handleDeleteEntry} onBack={() => setView('menu')} announce={announce} />}
+                        {view === 'bonus' && <BonusView onBack={() => setView('menu')} onSaveBonus={handleBonusSave} availableExercises={masterExerciseList} history={history} onStartLucky={() => setView('lucky')} />}
+                        {view === 'lucky' && <LuckyView onBack={() => setView('bonus')} onSave={handleBonusSave} availableExercises={masterExerciseList} history={history} />}
+                        {view === 'cardio' && <CardioForm history={history} onSave={handleSaveCardio} onCancel={() => setView('menu')} initialActivity={targetCardio} />}
+                        {view === 'vitals' && <VitalsView history={history} onSave={handleVitalsSave} />}
+                        {view === 'etp-menu' && <ETPMenuView onBack={() => setView('menu')} onSelect={(act) => { setTargetCardio(act); setView('cardio'); }} />}
+                        {view === 'weights' && (
+                            <div className="space-y-6">
+                                <div className="text-xl font-bold text-white border-b-2 border-slate-600 pb-2 mb-4">{activeRoutine}</div>
+                                {todaysExercises.length === 0 && (
+                                    <button onClick={handleLoadLastWorkout} className="w-full bg-slate-800 text-white border-2 border-slate-700 py-6 px-6 rounded-lg font-bold text-xl shadow flex items-center justify-center gap-3 hover:bg-slate-700"><Icons.RefreshCw size={28} /> Load Last Workout</button>
+                                )}
+                                {activeExercise && <ExerciseItem exercise={activeExercise} isEditing={true} isLast={!upNextExercises.length} onEdit={setEditingId} onDelete={removeExercise} onUpdate={updateExercise} onComplete={completeExercise} onSkip={handleSkipExercise} previousData={activeExerciseHistory} setAnnouncementText={announce} />}
+                                {!activeExercise && todaysExercises.length > 0 && (
+                                    <div className="p-6 bg-slate-900 border-4 border-slate-700 rounded-xl shadow-inner text-center space-y-4">
+                                        <div className="text-xl font-bold text-white">✅ Workout Complete!</div>
+                                        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 text-left"><StaticInput id="w-effort" label="Effort Score (1-10)" value={workoutEffort} onChange={setWorkoutEffort} inputMode="numeric" stepValue={1} /></div>
+                                        <button onClick={finishWorkout} className="w-full bg-slate-700 text-white text-xl font-bold py-5 px-6 rounded-lg shadow-lg flex items-center justify-center gap-3 hover:bg-slate-600"><Icons.Save size={28} /> Finish Workout</button>
+                                    </div>
+                                )}
+                                <AddExerciseForm onAdd={handleAddExercise} routine={activeRoutine} availableExercises={activeRoutineExercises} />
+                            </div>
+                        )}
+                        {view === 'analyze-history' && <DataAnalyzerView history={history} onBack={() => setView('maintenance-hub')} onFixMissing={handleLogRest} />}
+                        {view === 'reports' && <ReportsView history={history} onBack={() => setView('menu')} onComposeAI={(data) => { setAiReportData(data); setView('ai-prep'); }} setAnnouncementText={announce} />}
+                        {view === 'ai-prep' && <AIPrepView data={aiReportData} onBack={() => setView('reports')} setAnnouncementText={announce} />}
+                        {view === 'maintenance-hub' && <MaintenanceHubView onBack={() => setView('menu')} onAmendDb={() => setView('db-amendment')} onBackup={backupData} onRestore={restoreData} onAnalyze={() => setView('analyze-history')} lastRestoredFile={lastRestoredFile} setAnnouncementText={announce} />}
+                        {view === 'db-amendment' && <DatabaseAmendmentView customDb={customDb} onUpdateCustomDb={setCustomDb} onBack={() => { setView('maintenance-hub'); announce("Returning to Maintenance Hub."); }} setAnnouncementText={announce} />}
+                    </main>
+                </div>
+            );
+        }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
